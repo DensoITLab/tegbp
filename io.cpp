@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <random>
+#include <fstream>
 #include "tegbp.hpp"
+
 
 void load_data(mem_pool pool){
     printf("Generating dummy data");
@@ -32,5 +34,15 @@ void save_data(mem_pool pool){
 			printf("%04.1f|", pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)]);
 		}
 	}
+
+    double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
+	for(uint16 y=0;y<pool.H;y++)
+		for(uint16 x=0;x<pool.W;x++){
+			fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)+0];
+			fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)+1];
+	}
+
+    std::ofstream myFile ("result.bin", std::ios::out | std::ios::binary);
+    myFile.write ((char *)fimg, 2*pool.W*pool.H*sizeof(double));
 	printf("done..\n");
 }
