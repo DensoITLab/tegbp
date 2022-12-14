@@ -21,6 +21,11 @@ make
 ./process 64 100000
 ```
 
+## Visualizatino 
+Run `vis_result.ipynb`.
+It'll show the optical flow and the result are saved as png file.
+
+
 ## Misc
 See  `matlab` directory for the reference matlab implementation (slow).
 
