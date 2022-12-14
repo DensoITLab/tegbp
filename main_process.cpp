@@ -40,6 +40,7 @@ int main(int argc, char **argv)
 
 	// Visualize results
 	save_data(pool);
+	// debug_output(pool);
 
     return 0;
 }
