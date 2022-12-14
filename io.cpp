@@ -2,10 +2,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <random>
 #include <fstream>
 #include "tegbp.hpp"
 
+using namespace std;
+
+vector<string> split(string& input, char delimiter)
+{
+    istringstream stream(input);
+    string field;
+    vector<string> result;
+    while (getline(stream, field, delimiter)) {
+        result.push_back(field);
+    }
+    return result;
+}
 
 void load_data(mem_pool pool){
     printf("Generating dummy data");
@@ -22,6 +37,24 @@ void load_data(mem_pool pool){
 		pool.timestamps[i] 	= rand_time(gen);
 		// printf("([%3d] %2d, %2d,  %0.1f, %0.1f)\n",i, indices[2*i+0], indices[2*i+0], v_norms[2*i+0], v_norms[2*i+1]);
 	}
+	printf("done..\n");
+
+	ifstream ifs("data/bricks.txt");
+	string line;
+
+	getline(ifs, line);
+	cout << line << '\n';
+
+	int n = 0;
+    while (getline(ifs, line) && n<pool.B) {
+        vector<string> strvec = split(line, ',');
+		pool.indices[2*n+0] = stoi(strvec.at(0)); // x
+		pool.indices[2*n+1] = stoi(strvec.at(1)); // y
+		pool.v_norms[2*n+0] = stod(strvec.at(4)); // vx_perp
+		pool.v_norms[2*n+1] = stod(strvec.at(5)); // vy_perp
+		pool.timestamps[n] 	= stoi(strvec.at(2)); // t
+		n++;
+    }
 	printf("done..\n");
     return;
 }
