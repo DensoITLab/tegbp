@@ -7,7 +7,7 @@ function obs_msg = calc_data_term(v_perp, Lam, huber)
 % obs_msg   [6 x 1] : 
 
 theta   = atand(v_perp(2) ./ v_perp(1));
-rot_mat = [cosd(theta), sind(theta); -sind(theta), cosd(theta)];
+rot_mat = [cosd(theta), -sind(theta); sind(theta), cosd(theta)];
 Lam_teg = rot_mat * Lam * rot_mat';
 eta     = Lam_teg * v_perp;
 obs_msg = [eta; Lam_teg(:)];
