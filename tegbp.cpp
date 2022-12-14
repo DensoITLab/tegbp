@@ -1,8 +1,3 @@
-// https://ichigopack.net/openmp/omp_base_3.html
-// https://msu-cmse-courses.github.io/cmse401-S21-student/assignments/0225-HW2_OMP.html
-// g++ -o process -lm main_process.cpp  -fopenmp
-// ./process 64
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
