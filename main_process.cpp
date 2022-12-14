@@ -29,7 +29,8 @@ int main(int argc, char **argv)
 	mem_pool pool=initialize(B, H, W);
 
 	// Load data
-	load_data(pool);
+	// load_data_dummy(pool);
+	load_data_brick(pool);
 
 	// Run the main image processing function
 	double start = omp_get_wtime();

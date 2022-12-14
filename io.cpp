@@ -22,7 +22,7 @@ vector<string> split(string& input, char delimiter)
     return result;
 }
 
-void load_data(mem_pool pool){
+void load_data_dummy(mem_pool pool){
     printf("Generating dummy data");
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -38,7 +38,10 @@ void load_data(mem_pool pool){
 		// printf("([%3d] %2d, %2d,  %0.1f, %0.1f)\n",i, indices[2*i+0], indices[2*i+0], v_norms[2*i+0], v_norms[2*i+1]);
 	}
 	printf("done..\n");
+    return;
+}
 
+void load_data_brick(mem_pool pool){
 	ifstream ifs("data/bricks.txt");
 	string line;
 
@@ -58,6 +61,7 @@ void load_data(mem_pool pool){
 	printf("done..\n");
     return;
 }
+
 
 void save_data(mem_pool pool){
 	printf("Saving data");
