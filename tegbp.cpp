@@ -211,7 +211,7 @@ void process_batch(mem_pool pool)
 		uint16 x = pool.indices[2*i+0]; uint16 y = pool.indices[2*i+1]; 
         int t = pool.timestamps[i];
 
-		printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
+		// printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
 
 		// Compute data factor
 		V6D obs_msg = calc_data_term(v_perp);
