@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 	int num_thread 		= 64;
 	int W 			    = 272;
 	int H 			    = 208;
-	int B 		        = 1000;
+	int B 		        = 10000;
 
 	if (argc>1){
 		num_thread = atoi(argv[1]);
