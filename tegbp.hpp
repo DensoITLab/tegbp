@@ -29,6 +29,7 @@ struct mem_pool{
 
 void load_data_brick(mem_pool pool);
 void load_data_dummy(mem_pool pool);
+void debug_output(mem_pool pool);
 void save_data(mem_pool pool);
 void process_batch(mem_pool pool);
 mem_pool initialize(int B, int H, int W);
