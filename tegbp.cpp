@@ -205,9 +205,7 @@ void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, in
 
 void process_batch(mem_pool pool)
 {
-#pragma omp parallel
-{
-	#pragma omp for
+	#pragma omp parallel for
     for(int i=0; i<pool.B; i++){
         // double count    = 0;
         // double tot      = 0;
@@ -229,7 +227,6 @@ void process_batch(mem_pool pool)
 		// Core of message passing
 		message_passing_event(pool.node, pool.sae, x, y, t, pool.W, pool.H);
     }
-}
 return;
 }
 
