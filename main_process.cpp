@@ -11,17 +11,21 @@
 int main(int argc, char **argv)
 {
 	// Setup OMP
-	int num_thread = 64;
+	int num_thread 		= 64;
+	int W 			    = 128;
+	int H 			    = 128;
+	int B 		        = 1000000;
+
 	if (argc>1){
 		num_thread = atoi(argv[1]);
 	}
 	omp_set_num_threads(num_thread);
 
+	if (argc>2){
+		B = atoi(argv[2]);
+	}
+
 	// Initialize Global varialble 	by Allocating memory
-	int W 			    = 128;
-	int H 			    = 128;
-	int B 		        = 1000000;
-	// int B 		        = 10;
 	mem_pool pool=initialize(B, H, W);
 
 	// Load data

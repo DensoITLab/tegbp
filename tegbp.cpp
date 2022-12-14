@@ -16,7 +16,6 @@
 #include <cmath>
 #include "tegbp.hpp"
 
-// const int DT_ACT = 10;
 // OMP magic
 // #pragma omp critical
 // #pragma omp barrier
