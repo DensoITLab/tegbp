@@ -43,7 +43,7 @@ void save_data(mem_pool pool){
 			fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)+1];
 	}
 
-    std::ofstream myFile ("result.bin", std::ios::out | std::ios::binary);
+    std::ofstream myFile ("result/flo.bin", std::ios::out | std::ios::binary);
     myFile.write ((char *)fimg, 2*pool.W*pool.H*sizeof(double));
 	printf("done..\n");
 }
