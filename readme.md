@@ -7,6 +7,7 @@ Code for CVPR submmision 4712.
 ## Setup dependency 
 ```
 sudo apt install libeigen3-dev
+pip install Command
 ```
 
 
@@ -21,7 +22,7 @@ make
 ./process 64 100000
 ```
 
-## Visualizatino 
+## Visualization
 Run `vis_result.ipynb`.
 It'll show the optical flow and the result are saved as png file.
 

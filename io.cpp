@@ -28,14 +28,15 @@ void load_data(mem_pool pool){
 
 void save_data(mem_pool pool){
 	printf("Saving data");
-	for(uint16 y=0;y<pool.H/6;y++){
-		printf("\n");
-		for(uint16 x=0;x<pool.W/6;x++){
-			printf("%04.1f|", pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)]);
-		}
-	}
+	// for(uint16 y=0;y<pool.H/6;y++){
+	// 	printf("\n");
+	// 	for(uint16 x=0;x<pool.W/6;x++){
+	// 		printf("%04.1f|", pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)]);
+	// 	}
+	// }
 
     double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
+	
 	for(uint16 y=0;y<pool.H;y++)
 		for(uint16 x=0;x<pool.W;x++){
 			fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)+0];
