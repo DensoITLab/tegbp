@@ -30,6 +30,11 @@ It'll execute the followng operations
 - show the optical flow,
 - and saved the resutls as png file
 
+If you can not open notebook, first convert it to the python script and then execute as a python script.
+```
+jupyter nbconvert  --to script vis_result.py  vis_result.ipynb 
+python vis_result.py 
+```
 
 ## Misc
 See  `matlab` directory for the reference matlab implementation (slow).
