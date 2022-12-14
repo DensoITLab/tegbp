@@ -16,8 +16,9 @@
 // #pragma omp barrier
 // #pragma omp barrier
 
-int dirc[2][6];
-int map_set_dirc[6];
+int NEIGHBOR = 8;
+int dirc[2][10];
+int map_set_dirc[10];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
 int sub2ind_sae(uint16 x, uint16 y, int dir, int W, int H){
@@ -42,7 +43,7 @@ void set_state(double * node, int ind, V6D* data)
 
 V2D belief_vec_to_mu(V6D belief)
 {
-	double cond = 0.01;
+	double cond = 0.00001;
 	V2D eta = belief.head(2);
 	Map<M2D,Eigen::Aligned> Lam_0(belief.tail(4).data());
 	Lam_0(0, 0)+=cond; // conditionig
@@ -57,7 +58,7 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int W, int
 	int ind = sub2ind(x, y, 1, 0, W, H);
 	get_state(node, ind, &belief); // ind of obs node, node_index, dir 
 
-	for(int dir=2;dir<6;dir++){
+	for(int dir=2;dir<2+NEIGHBOR;dir++){
 		if ((t - sae[sub2ind_sae(x, y, dir, W, H)]) < DT_ACT){
 			get_state(node, sub2ind(x, y, dir+1, 0, W, H), &msg_from);
 			belief = belief + msg_from;
@@ -154,7 +155,7 @@ void send_message_4connect(double* node, int* sae, uint16 x, uint16 y, int t, in
     state(1) = self(1);
 
     // variable message
-    for(int dir=2; dir<6; dir++){ // 4 direction
+    for(int dir=2; dir<2+NEIGHBOR; dir++){ // 4 direction
         ind_sae = sub2ind_sae(x, y, dir, W, H);     // 送る方向から来るmassageを確認
         if ((t - sae[ind_sae]) < DT_ACT){           // activeなときはそれを引いておかなければいけない
             ind = sub2ind(x, y, dir, 0, W, H);      // [dir, 0]
@@ -185,7 +186,7 @@ void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, in
     belief = update_state(node, sae, x, y, t, W, H);
     send_message_4connect(node, sae, x, y, t, W, H, belief);
 
-    for(int dir=2; dir<6; dir++){ // 4 direction
+    for(int dir=2; dir<2+NEIGHBOR; dir++){ // 4 direction
         ind_sae = sub2ind_sae(x, y, dir, W, H);    // active確認
         if ((t - sae[ind_sae]) < DT_ACT){                   // message passing at neighbor node if active
             x_ = x + dirc[0][dir];
@@ -244,11 +245,24 @@ mem_pool initialize(int B, int H, int W){
 	map_set_dirc[3] = 2; // [from right message] of [left node]
 	map_set_dirc[4] = 5; // [from up message] of [down node]
 	map_set_dirc[5] = 4; // [from down message] of [up node]
+	dirc[0][6] = -1;     	// upper-left
+	dirc[1][6] = -1;
+	dirc[0][7] = 1;     	// lower-right
+	dirc[1][7] = 1;
+	dirc[0][8] = -1;        // upper-right
+	dirc[1][8] = 1;
+	dirc[0][9] = 1;         // lower-left
+	dirc[1][9] = -1;
+	map_set_dirc[6] = 7; // [from upper-left message] of [lower-right node]
+	map_set_dirc[7] = 6; // [from lower-right message] of [upper-left node]
+	map_set_dirc[8] = 9; // [from upper-right message] of [lower-left node]
+	map_set_dirc[9] = 8; // [from lower-left message] of [upper-right node]
 
     mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*W*H*sizeof(double));
+	memset(pool.node, 0.0, NOD_DIM*W*H*sizeof(double));
 	pool.sae  	    = (int *) malloc(1*W*H*sizeof(int));
-	memset(pool.sae, -DT_ACT, 1*W*H*sizeof(int));
+	memset(pool.sae, -10*DT_ACT, 1*W*H*sizeof(int));
 	pool.v_norms 	= (double *) malloc(2*B*sizeof(double));
 	pool.indices    = (uint16 *) malloc(2*B*sizeof(uint16));
 	pool.timestamps = (int *) malloc(1*B*sizeof(int));
