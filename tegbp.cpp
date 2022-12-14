@@ -59,14 +59,14 @@ V2D belief_vec_to_mu(V6D belief)
 V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int W, int H)
 {
 	V6D belief;
-	V6D belief_;
+	V6D msg_from;
 	int ind = sub2ind(x, y, 1, 0, W, H);
-	get_state(node, ind, &belief); // ind of obs node, node_index, dir
+	get_state(node, ind, &belief); // ind of obs node, node_index, dir 
 
 	for(int dir=2;dir<6;dir++){
 		if ((t - sae[sub2ind_sae(x, y, dir, W, H)]) < DT_ACT){
-			get_state(node, sub2ind(x, y, dir+1, 0, W, H), &belief_);
-			belief = belief + belief_;
+			get_state(node, sub2ind(x, y, dir+1, 0, W, H), &msg_from);
+			belief = belief + msg_from;
 		}
 	}
 
@@ -74,25 +74,22 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int W, int
 
     // ここ最適化希望
     // beliefはメッセージ送信に使う
-    // V6D self;
+    V6D self;
     ind = sub2ind(x, y, 0, 0, W, H); // ind of self node, node_index, dir
-    // get_state(node, ind, &self); //ここは値をセットする？　そのままだと値が反映されてない
-	belief.head(2)=mu;
-    // self(0) = mu(0);
-    // self(1) = mu(1);
-
-	set_state(node, ind, &belief);
+    get_state(node, ind, &self); //ここは値をセットする？　そのままだと値が反映されてない
+	self.head(2)=mu;
+	set_state(node, ind, &self);
 	return belief;
 }
 
 V6D calc_data_term(V2D v_perp)
 {
-	double huber 		=  1.0;
-	double sigma_obs 	=  1.0;
-	double theta   		= std::atan(v_perp(1) / v_perp(0));
+	double huber 		    =  1.0;
+	double inv_sigma_obs 	=  1.0;
+	double theta   		    = std::atan(v_perp(1) / v_perp(0));
 
 	M2D R; R << std::cos(theta), std::sin(theta), -std::sin(theta), std::cos(theta);
-	M2D Lam_0; Lam_0 << sigma_obs, 0.0, 0.0,  sigma_obs;
+	M2D Lam_0; Lam_0 << inv_sigma_obs, 0.0, 0.0,  inv_sigma_obs;
 	M2D Lam_R = R * Lam_0 * R.transpose();
 	V2D eta     = Lam_R * v_perp;
 	V6D obs_msg; obs_msg << eta(0),  eta(1), Lam_R(0,0),  Lam_R(0,1), Lam_R(1,0), Lam_R(1,1);
@@ -225,9 +222,10 @@ void process_batch(mem_pool pool)
 
 		// Compute data factor
 		V6D obs_msg = calc_data_term(v_perp);
+		// printf("(%3.2f, %3.2f) \n",obs_msg(0), obs_msg(1));
 
 		// Set the observation
-		set_state(pool.node, sub2ind(x, y, 0, 0, pool.W, pool.H), &obs_msg);
+		set_state(pool.node, sub2ind(x, y, 1, 0, pool.W, pool.H), &obs_msg);
 
 		// Core of message passing
 		message_passing_event(pool.node, pool.sae, x, y, t, pool.W, pool.H);

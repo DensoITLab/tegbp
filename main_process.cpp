@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 	int W 			    = 128;
 	int H 			    = 128;
 	int B 		        = 1000000;
+	// int B 		        = 10;
 	mem_pool pool=initialize(B, H, W);
 
 	// Load data
