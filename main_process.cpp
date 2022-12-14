@@ -12,9 +12,9 @@ int main(int argc, char **argv)
 {
 	// Setup OMP
 	int num_thread 		= 64;
-	int W 			    = 128;
-	int H 			    = 128;
-	int B 		        = 1000000;
+	int W 			    = 272;
+	int H 			    = 208;
+	int B 		        = 1000;
 
 	if (argc>1){
 		num_thread = atoi(argv[1]);

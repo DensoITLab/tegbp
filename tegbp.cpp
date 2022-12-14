@@ -84,11 +84,12 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int W, int
 V6D calc_data_term(V2D v_perp)
 {
 	double huber 		    =  1.0;
-	double inv_sigma_obs 	=  1.0;
+	double inv_sigma_obs_r	=  1/9.0;
+	double inv_sigma_obs_t 	=  1/100.0;
 	double theta   		    = std::atan(v_perp(1) / v_perp(0));
 
-	M2D R; R << std::cos(theta), std::sin(theta), -std::sin(theta), std::cos(theta);
-	M2D Lam_0; Lam_0 << inv_sigma_obs, 0.0, 0.0,  inv_sigma_obs;
+	M2D R; R << std::cos(theta), -std::sin(theta), std::sin(theta), std::cos(theta);
+	M2D Lam_0; Lam_0 << inv_sigma_obs_r, 0.0, 0.0,  inv_sigma_obs_t;
 	M2D Lam_R = R * Lam_0 * R.transpose();
 	V2D eta     = Lam_R * v_perp;
 	V6D obs_msg; obs_msg << eta(0),  eta(1), Lam_R(0,0),  Lam_R(0,1), Lam_R(1,0), Lam_R(1,1);
@@ -110,8 +111,8 @@ V6D calc_data_term(V2D v_perp)
 
 V6D smoothness_factor(V6D msg_v, V4D state)
 {
-	double huber    = 1.0;
-    M4D Lam; Lam << 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0; // [4 x 4]
+	double huber    		= 1.0;
+    M4D Lam; Lam << 100.0, 0.0, -100.0, 0.0, 0.0, 100.0, 0.0, -100.0, -100.0, 0.0, 100.0, 0.0, 0.0, -100.0, 0.0, 100.0; // [4 x 4]
     V4D eta; eta << 0.0, 0.0, 0.0, 0.0;
     
 	//  huber
@@ -213,9 +214,9 @@ void process_batch(mem_pool pool)
 		V2D v_perp;
 		v_perp <<  pool.v_norms[2*i+0],  pool.v_norms[2*i+1];
 		uint16 x = pool.indices[2*i+0]; uint16 y = pool.indices[2*i+1]; 
-        int t = pool.timestamps[i] + 100;
+        int t = pool.timestamps[i];
 
-		// printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
+		printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
 
 		// Compute data factor
 		V6D obs_msg = calc_data_term(v_perp);
@@ -251,10 +252,11 @@ mem_pool initialize(int B, int H, int W){
 
     mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*W*H*sizeof(double));
-	pool.sae  	    	= (int *) malloc(1*W*H*sizeof(int));
+	pool.sae  	    = (int *) malloc(1*W*H*sizeof(int));
+	memset(pool.sae, -DT_ACT, 1*W*H*sizeof(int));
 	pool.v_norms 	= (double *) malloc(2*B*sizeof(double));
-	pool.indices     = (uint16 *) malloc(2*B*sizeof(uint16));
-	pool.timestamps  	= (int *) malloc(1*B*sizeof(int));
+	pool.indices    = (uint16 *) malloc(2*B*sizeof(uint16));
+	pool.timestamps = (int *) malloc(1*B*sizeof(int));
     pool.B = B;
     pool.H = H;
     pool.W = W;

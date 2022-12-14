@@ -5,7 +5,7 @@
 using namespace Eigen;
 #define STS_DIM 6
 #define NOD_DIM STS_DIM*6
-#define DT_ACT 10
+#define DT_ACT 50000
 
 typedef Matrix<double, 2, 2> M2D;
 typedef Matrix<double, 2, 1> V2D;
