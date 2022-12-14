@@ -68,7 +68,7 @@ void debug_output(mem_pool pool){
 	for(uint16 y=0;y<pool.H/6;y++){
 		printf("\n");
 		for(uint16 x=0;x<pool.W/6;x++){
-			printf("%04.1f|", pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)]);
+			printf("%04.1f|", pool.node[sub2ind(x, y, 0, 0, pool.H, pool.W)]);
 		}
 	}
 	printf("done..\n");
@@ -81,8 +81,8 @@ void save_data(mem_pool pool){
 	
 	for(uint16 y=0;y<pool.H;y++)
 		for(uint16 x=0;x<pool.W;x++){
-			fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)+0];
-			fimg[2*(pool.W*y + x)+1] = pool.node[sub2ind(x, y, 0, 0, pool.W, pool.H)+1];
+			fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, 0, 0, pool.H, pool.W)+0];
+			fimg[2*(pool.W*y + x)+1] = pool.node[sub2ind(x, y, 0, 0, pool.H, pool.W)+1];
 	}
 
     std::ofstream myFile ("result/flo.bin", std::ios::out | std::ios::binary);

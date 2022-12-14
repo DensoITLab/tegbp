@@ -21,11 +21,11 @@ int dirc[2][10];
 int map_set_dirc[10];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
-int sub2ind_sae(uint16 x, uint16 y, int dir, int W, int H){
+int sub2ind_sae(uint16 x, uint16 y, int dir, int H, int W){
 	return (x+dirc[0][dir] + W*(y+dirc[1][dir]));
 }
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
-int sub2ind(uint16 x, uint16 y, int node_index, int dir, int W, int H){
+int sub2ind(uint16 x, uint16 y, int node_index, int dir, int H, int W){
 	return NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir]))+node_index*STS_DIM;
 }
 
@@ -51,26 +51,25 @@ V2D belief_vec_to_mu(V6D belief)
 	return Lam_0.inverse() * eta;
 }
 
-V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int W, int H)
+V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int H, int W)
 {
 	V6D belief;
 	V6D msg_from;
-	int ind = sub2ind(x, y, 1, 0, W, H);
+	int ind = sub2ind(x, y, IDX_OBS, 0, H, W);
 	get_state(node, ind, &belief); // ind of obs node, node_index, dir 
 
 	for(int dir=2;dir<2+NEIGHBOR;dir++){
-		if ((t - sae[sub2ind_sae(x, y, dir, W, H)]) < DT_ACT){
-			get_state(node, sub2ind(x, y, dir+1, 0, W, H), &msg_from);
+		if ((t - sae[sub2ind_sae(x, y, dir, H, W)]) < DT_ACT){
+			get_state(node, sub2ind(x, y, dir+1, 0, H, W), &msg_from);
 			belief = belief + msg_from;
 		}
 	}
 
 	V2D mu = belief_vec_to_mu(belief);
 
-    // ここ最適化希望
     // beliefはメッセージ送信に使う
     V6D self;
-    ind = sub2ind(x, y, 0, 0, W, H); // ind of self node, node_index, dir
+    ind = sub2ind(x, y, IDX_SLF, 0, H, W); // ind of self node, node_index, dir
     get_state(node, ind, &self); //ここは値をセットする？　そのままだと値が反映されてない
 	self.head(2)=mu;
 	set_state(node, ind, &self);
@@ -141,7 +140,7 @@ V6D smoothness_factor(V6D msg_v, V4D state)
 	return msg;
 }
 
-void send_message_4connect(double* node, int* sae, uint16 x, uint16 y, int t, int W, int H, V6D belief)
+void send_message_4connect(double* node, int* sae, uint16 x, uint16 y, int t, int H, int W, V6D belief)
 {
     V4D state;
     V6D self, come, node_to;
@@ -149,54 +148,54 @@ void send_message_4connect(double* node, int* sae, uint16 x, uint16 y, int t, in
     int ind, ind_to, ind_sae;
 
     // get state of self node
-    int ind_self = sub2ind(x, y, 0, 0, W, H); // node_index, dir
+    int ind_self = sub2ind(x, y, 0, 0, H, W); // node_index, dir
     get_state(node, ind_self, &self);
     state(0) = self(0);
     state(1) = self(1);
 
     // variable message
     for(int dir=2; dir<2+NEIGHBOR; dir++){ // 4 direction
-        ind_sae = sub2ind_sae(x, y, dir, W, H);     // 送る方向から来るmassageを確認
+        ind_sae = sub2ind_sae(x, y, dir, H, W);     // 送る方向から来るmassageを確認
         if ((t - sae[ind_sae]) < DT_ACT){           // activeなときはそれを引いておかなければいけない
-            ind = sub2ind(x, y, dir, 0, W, H);      // [dir, 0]
+            ind = sub2ind(x, y, dir, 0, H, W);      // [dir, 0]
             get_state(node, ind, &come);
             msg_v = belief - come;
         }else{
             msg_v = belief;
         }
         // get state of destination node
-        ind_to      = sub2ind(x, y, 0, dir, W, H); // [0, dir]
+        ind_to      = sub2ind(x, y, IDX_OBS, dir, H, W); // [0, dir]
         get_state(node, ind_to, &node_to);
         state(2)    = node_to(0);
         state(3)    = node_to(1);
         // prior factor message
         msg_p       = smoothness_factor(msg_v, state);
-        ind         = sub2ind(x, y, map_set_dirc[dir], dir, W, H); // [?, ?]
+        ind         = sub2ind(x, y, map_set_dirc[dir], dir, H, W); // [?, ?]
         set_state(node, ind, &msg_p);
     }
 }
 
-void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, int W, int H) // 多分再帰でかける？ k=1 hopだからいいか
+void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, int H, int W) // 多分再帰でかける？ k=1 hopだからいいか
 {
     int ind, ind_sae;
     int x_, y_;
     V6D belief;
 
     // at self node
-    belief = update_state(node, sae, x, y, t, W, H);
-    send_message_4connect(node, sae, x, y, t, W, H, belief);
+    belief = update_state(node, sae, x, y, t, H, W);
+    send_message_4connect(node, sae, x, y, t, H, W, belief);
 
     for(int dir=2; dir<2+NEIGHBOR; dir++){ // 4 direction
-        ind_sae = sub2ind_sae(x, y, dir, W, H);    // active確認
+        ind_sae = sub2ind_sae(x, y, dir, H, W);    // active確認
         if ((t - sae[ind_sae]) < DT_ACT){                   // message passing at neighbor node if active
             x_ = x + dirc[0][dir];
             y_ = y + dirc[1][dir];
             // at self node
-            belief = update_state(node, sae, x_, y_, t, W, H);
-            send_message_4connect(node, sae, x_, y_, t, W, H, belief);
+            belief = update_state(node, sae, x_, y_, t, H, W);
+            send_message_4connect(node, sae, x_, y_, t, H, W, belief);
         }
     }
-	update_state(node, sae, x, y, t, W, H);
+	update_state(node, sae, x, y, t, H, W);
 	return;
 }
 
@@ -219,10 +218,10 @@ void process_batch(mem_pool pool)
 		// printf("(%3.2f, %3.2f) \n",obs_msg(0), obs_msg(1));
 
 		// Set the observation
-		set_state(pool.node, sub2ind(x, y, 1, 0, pool.W, pool.H), &obs_msg);
+		set_state(pool.node, sub2ind(x, y, 1, 0, pool.H, pool.W), &obs_msg);
 
 		// Core of message passing
-		message_passing_event(pool.node, pool.sae, x, y, t, pool.W, pool.H);
+		message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);
     }
 return;
 }

@@ -7,6 +7,10 @@ using namespace Eigen;
 #define NOD_DIM STS_DIM*6
 #define DT_ACT 50000
 
+#define IDX_SLF 0
+#define IDX_OBS 1
+
+
 typedef Matrix<double, 2, 2> M2D;
 typedef Matrix<double, 2, 1> V2D;
 typedef Matrix<double, 4, 4> M4D;
@@ -33,6 +37,6 @@ void debug_output(mem_pool pool);
 void save_data(mem_pool pool);
 void process_batch(mem_pool pool);
 mem_pool initialize(int B, int H, int W);
-int sub2ind(uint16 x, uint16 y, int node_index, int dir, int W, int H);
+int sub2ind(uint16 x, uint16 y, int node_index, int dir, int H, int W);
 
 #endif
