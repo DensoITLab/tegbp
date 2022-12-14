@@ -32,3 +32,8 @@ See  `matlab` directory for the reference matlab implementation (slow).
 
 ## Citation
 Coder: Y.Sekikawa, J.Nagata
+
+## Reference
+- [Compile option](https://ac-as.net/gcc-optimization-option/)
+- [OMP basics](https://ichigopack.net/openmp/omp_base_3.html)
+- [OMP tutorial](https://msu-cmse-courses.github.io/cmse401-S21-student/assignments/0225-HW2_OMP.html)
