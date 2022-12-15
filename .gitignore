@@ -1,6 +1,7 @@
 **/__pycache__/
 .vscode/
-data/
+data/*
 process
 result/
+__pycache__/
 ._*
