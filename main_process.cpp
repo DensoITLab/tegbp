@@ -34,7 +34,9 @@ int main(int argc, char **argv)
 
 	// Run the main image processing function
 	double start = omp_get_wtime();
-	process_batch(pool);
+	for (int itr=0;itr<1;itr++){
+		process_batch(pool);
+	}
 	double end = omp_get_wtime();
 	printf("Work took %f seconds for %d K events (num_thread: %d)\n", end - start, B/1000, num_thread);
 

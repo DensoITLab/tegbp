@@ -13,6 +13,7 @@ using namespace Eigen;
 
 #define IDX_SLF 0
 #define IDX_OBS 1
+#define STS_OFF 2
 #define NEIGHBOR 8
 
 
