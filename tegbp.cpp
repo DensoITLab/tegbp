@@ -243,40 +243,13 @@ mem_pool initialize(int B, int H, int W){
 	for (int s_=0; s_<N_SCALE; s_++){
 		int s = N_SCALE - s_ - 1;
 		int offset = 2+s*NEIGHBOR;
-		// for (int col =0; col<NEIGHBOR; col++){
-		// 	for (int row =0; row<2; row++){
-		// 		dirc[row][offset+col] = (int)pow(2, s) * base_dirc[row][col];
-		// 	}
-		// 	map_set_dirc[offset+col] 	= offset+base_map_set_dirc[col]; 	// [from left message] of [right node]
-		// }
-
-		dirc[0][offset+0] 	= (int)pow(2, s) * 0;     // left
-		dirc[1][offset+0] 	= (int)pow(2, s) * -1;
-		dirc[0][offset+1] 	= (int)pow(2, s) * 0;     // right
-		dirc[1][offset+1] 	= (int)pow(2, s) * 1;
-		dirc[0][offset+2] 	= (int)pow(2, s) * -1;    // up
-		dirc[1][offset+2] 	= (int)pow(2, s) * 0;
-		dirc[0][offset+3] 	= (int)pow(2, s) * 1;     // down
-		dirc[1][offset+3] 	= (int)pow(2, s) * 0;
-		map_set_dirc[offset+0] 	= offset+1; 	// [from left message] of [right node]
-		map_set_dirc[offset+1] 	= offset+0; 	// [from right message] of [left node]
-		map_set_dirc[offset+2] 	= offset+3; 	// [from up message] of [down node]
-		map_set_dirc[offset+3] 	= offset+2; 	// [from down message] of [up node]
-		if (NEIGHBOR==8){
-
-			dirc[0][offset+4] = (int)pow(2, s) * -1;     // upper-left
-			dirc[1][offset+4] = (int)pow(2, s) * -1;
-			dirc[0][offset+5] = (int)pow(2, s) * 1;     	// lower-right
-			dirc[1][offset+5] = (int)pow(2, s) * 1;
-			dirc[0][offset+6] = (int)pow(2, s) * -1;     // upper-right
-			dirc[1][offset+6] = (int)pow(2, s) * 1;
-			dirc[0][offset+7] = (int)pow(2, s) * 1;      // lower-left
-			dirc[1][offset+7] = (int)pow(2, s) * -1;
-			map_set_dirc[offset+4] = offset+5; // [from upper-left message] of [lower-right node]
-			map_set_dirc[offset+5] = offset+4; // [from lower-right message] of [upper-left node]
-			map_set_dirc[offset+6] = offset+7; // [from upper-right message] of [lower-left node]
-			map_set_dirc[offset+7] = offset+6; // [from lower-left message] of [upper-right node]
+		for (int col =0; col<NEIGHBOR; col++){
+			for (int row =0; row<2; row++){
+				dirc[row][offset+col] = (int)pow(2, s) * base_dirc[row][col];
+			}
+			map_set_dirc[offset+col] 	= offset+base_map_set_dirc[col]; 	// [from left message] of [right node]
 		}
+
 		// printf("%d\n", offset);
 		// printf("[%d, %d]~[%d, %d]\n", dirc[0][offset+0], dirc[1][offset+0], dirc[0][offset+7], dirc[1][offset+7]);
 	}
