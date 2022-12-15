@@ -9,10 +9,16 @@ using namespace Eigen;
 #define STS_DIM 6
 #define NOD_DIM STS_DIM*(2+N_EDGE)
 #define DT_ACT 50000
+#define WINSIZE 10000
+
 // #define N_ITER 1
 
 #define IDX_SLF 0
 #define IDX_OBS 1
+
+#define FAST1
+#define FAST2
+
 
 typedef Matrix<double, 2, 2> M2D;
 typedef Matrix<double, 2, 1> V2D;
@@ -38,8 +44,8 @@ struct mem_pool{
 void load_data_brick(mem_pool pool);
 void load_data_dummy(mem_pool pool);
 void debug_output(mem_pool pool);
-void save_data(mem_pool pool);
-void process_batch(mem_pool pool);
+void save_data(mem_pool pool, int seq_id, int index);
+void process_batch(mem_pool pool, int b_ptr);
 mem_pool initialize(int B, int H, int W);
 int sub2ind(uint16 x, uint16 y, int node_index, int dir, int H, int W);
 void init_sae(mem_pool pool);

@@ -35,15 +35,21 @@ int main(int argc, char **argv)
 	init_sae(pool);
 
 	// Run the main image processing function
-	double start = omp_get_wtime();
+	double ellapse = 0;
+	int b_ptr = 0;
 	for (int itr=0;itr<10;itr++){
-		process_batch(pool);
+		double start = omp_get_wtime();
+		process_batch(pool, b_ptr);
+ 		double end = omp_get_wtime();
+
+		b_ptr = b_ptr + (WINSIZE*0); 
+		ellapse = ellapse + (end-start);
+		save_data(pool, itr, 0);
+		save_data(pool, itr, 1);
 	}
-	double end = omp_get_wtime();
-	printf("Work took %f seconds for %d K events (num_thread: %d)\n", end - start, B/1000, num_thread);
+	printf("Work took %f seconds for %d K events (num_thread: %d)\n",ellapse, B/1000, num_thread);
 
 	// Visualize results
-	save_data(pool);
 	// debug_output(pool);
 
     return 0;

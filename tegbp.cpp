@@ -268,10 +268,11 @@ void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, in
 	return;
 }
 
-void process_batch(mem_pool pool)
+void process_batch(mem_pool pool, int b_ptr)
 {
+	printf("process_batch %d, %d\n",b_ptr, (b_ptr+WINSIZE));
 	#pragma omp parallel for
-    for(int i=0; i<pool.B; i++){
+    for(int i=b_ptr; i<(b_ptr+WINSIZE); i++){
         // double count    = 0;
         // double tot      = 0;
 
