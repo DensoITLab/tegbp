@@ -106,11 +106,33 @@ V6D update_state_fast(double * node, int* sae, uint16 x, uint16 y, int t,  int H
 	return belief;
 }
 
+double huber_scale_(double M2){
+	double huber	= 1.0;
+	double scale	= 1.0;
+	if (huber > 0){
+		if (M2 < huber*huber){
+			double scale   = 1.0;
+		}else{
+			double scale   = 2.0*huber/std::sqrt(M2) - huber*huber/M2;
+		}
+	}
+	return scale;
+}
+
+double huber_scale(V2D v_perp, M2D Lam){
+	double M2      = (v_perp.transpose() * Lam * v_perp)(0);
+	return huber_scale_(M2);
+}
+
+double huber_scale(V4D v_perp, M4D Lam){
+	double M2      = (v_perp.transpose() * Lam * v_perp)(0);
+	return huber_scale_(M2);
+}
+
 V6D calc_data_term(V2D v_perp)
 {
-	double huber 		    =  1.0;
-	double inv_sigma_obs_r	=  1/9.0;
-	double inv_sigma_obs_t 	=  1/100.0;
+	double inv_sigma_obs_r	=  1.0/9.0;
+	double inv_sigma_obs_t 	=  1.0/100.0;
 	double theta   		    = std::atan(v_perp(1) / v_perp(0));
 
 	M2D R; R << std::cos(theta), -std::sin(theta), std::sin(theta), std::cos(theta);
@@ -120,38 +142,19 @@ V6D calc_data_term(V2D v_perp)
 	V6D obs_msg; obs_msg << eta(0),  eta(1), Lam_R(0,0),  Lam_R(0,1), Lam_R(1,0), Lam_R(1,1);
 
 	//  huber
-	double scale   = 1.0;
-	if (huber > 0){
-		double M2      = (v_perp.transpose() * Lam_R * v_perp)(0);
-		double M       = std::sqrt(M2);
-		if (M2 < huber*huber){
-			double scale   = 1.0;
-		}else{
-			double scale   = 2.0*huber/M - huber*huber/M2;
-		}
-	}
-
-	return obs_msg * scale;
+	return obs_msg * huber_scale(v_perp, Lam_R);
 }
 
 V6D smoothness_factor(V6D msg_v, V4D state)
 {
 	double huber    		= 1.0;
+	double huber2    		= huber*huber;
 	double sigma			= 100.0;
     M4D Lam; Lam << sigma, 0.0, -sigma, 0.0, 0.0,sigma, 0.0, -sigma, -sigma, 0.0, sigma, 0.0, 0.0, -sigma, 0.0, sigma; // [4 x 4]
     V4D eta; eta << 0.0, 0.0, 0.0, 0.0;
     
 	//  huber
-    double scale   = 1.0;
-	if (huber > 0){
-		double M2      = (state.transpose() * Lam * state)(0);
-		double M       = std::sqrt(M2);
-		if (M2 < huber*huber){
-			scale   = 1.0;
-		}else{
-			scale   = 2.0*huber/M - huber*huber/M2;
-		}
-	}
+    double scale   = huber_scale(state, Lam);;
 
 	Lam = Lam * scale;
 	eta = eta * scale;
