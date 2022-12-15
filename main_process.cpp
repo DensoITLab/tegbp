@@ -32,6 +32,8 @@ int main(int argc, char **argv)
 	// load_data_dummy(pool);
 	load_data_brick(pool);
 
+	init_sae(pool);
+
 	// Run the main image processing function
 	double start = omp_get_wtime();
 	for (int itr=0;itr<10;itr++){

@@ -59,6 +59,7 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int H, int
 
 	for(int dir=2; dir<2+N_EDGE; dir++){
 		if ((t - sae[sub2ind_sae(x, y, dir, H, W)]) < DT_ACT){
+			// printf("belief\n");
 			get_state(node, sub2ind(x, y, dir, 0, H, W), &msg_from);
 			belief = belief + msg_from;
 		}
@@ -218,14 +219,21 @@ void process_batch(mem_pool pool)
 		// printf("(%3.2f, %3.2f) \n",obs_msg(0), obs_msg(1));
 
 		// Set the observation
-		set_state(pool.node, sub2ind(x, y, 1, 0, pool.H, pool.W), &obs_msg);
+		set_state(pool.node, sub2ind(x, y, IDX_OBS, 0, pool.H, pool.W), &obs_msg);
 
 		// Core of message passing
-		for(int iter=0; iter<N_ITER; iter++){
-			message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);
-    	}
+		message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);
 	}
 return;
+}
+
+void init_sae(mem_pool pool){
+	// Init SAE
+    for(int i=0; i<pool.B; i++){
+		uint16 x = pool.indices[2*i+0]; uint16 y = pool.indices[2*i+1]; 
+		pool.sae[(pool.W*y + x)] = pool.timestamps[i];
+		// printf("t: %d..\n",  pool.timestamps[i]);
+	}
 }
 
 
@@ -268,5 +276,6 @@ mem_pool initialize(int B, int H, int W){
     pool.B = B;
     pool.H = H;
     pool.W = W;
+	
     return pool;
 }

@@ -4,12 +4,12 @@
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
 #define N_SCALE 5
-#define NEIGHBOR 8
+#define NEIGHBOR 4
 #define N_EDGE NEIGHBOR*N_SCALE
 #define STS_DIM 6
 #define NOD_DIM STS_DIM*(2+N_EDGE)
 #define DT_ACT 50000
-#define N_ITER 10
+// #define N_ITER 1
 
 #define IDX_SLF 0
 #define IDX_OBS 1
@@ -43,5 +43,6 @@ void save_data(mem_pool pool);
 void process_batch(mem_pool pool);
 mem_pool initialize(int B, int H, int W);
 int sub2ind(uint16 x, uint16 y, int node_index, int dir, int H, int W);
+void init_sae(mem_pool pool);
 
 #endif
