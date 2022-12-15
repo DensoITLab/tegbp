@@ -17,7 +17,7 @@
 // #pragma omp barrier
 
 int8 dirc[2][2+N_EDGE]; // 2+NEIGHBOR*N_SCALE
-int8 map_set_dirc[2+N_EDGE];
+int8 dirc_idx[2+N_EDGE];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
 int sub2ind_sae(uint16 x, uint16 y, int dir, int H, int W){
@@ -34,6 +34,12 @@ void get_state(double * node, int ind, V6D* data)
 	memcpy(data, &node[ind], sizeof(V6D));
 	return;
 }
+
+V6D* get_state_ptr(double * node, int ind)
+{
+	return (V6D*)&node[ind];
+}
+
 void set_state(double * node, int ind, V6D* data)
 {
 	memcpy(&node[ind], data, sizeof(V6D));
@@ -59,7 +65,6 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int H, int
 
 	for(int dir=2; dir<2+N_EDGE; dir++){
 		if ((t - sae[sub2ind_sae(x, y, dir, H, W)]) < DT_ACT){
-			// printf("belief\n");
 			get_state(node, sub2ind(x, y, dir, 0, H, W), &msg_from);
 			belief = belief + msg_from;
 		}
@@ -73,6 +78,31 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int H, int
     get_state(node, ind, &self);
 	self.head(2)=mu;
 	set_state(node, ind, &self);
+	return belief;
+}
+
+V6D update_state_fast(double * node, int* sae, uint16 x, uint16 y, int t,  int H, int W)
+{
+	V6D belief;
+	V6D *msg_from;
+	int ind = sub2ind(x, y, IDX_OBS, 0, H, W);
+	get_state(node, ind, &belief); // ind of obs node, node_index, dir 
+
+	for(int dir=2; dir<2+N_EDGE; dir++){
+		if ((t - sae[sub2ind_sae(x, y, dir, H, W)]) < DT_ACT){
+			msg_from = get_state_ptr(node, sub2ind(x, y, dir, 0, H, W));
+			belief = belief + *msg_from;
+		}
+	}
+
+	V2D mu = belief_vec_to_mu(belief);
+
+    // Set updated state
+    V6D *self;
+    ind = sub2ind(x, y, IDX_SLF, 0, H, W); // ind of self node, node_index, dir
+    self = get_state_ptr(node, ind);
+	(*self).head(2)=mu;
+	set_state(node, ind, self);
 	return belief;
 }
 
@@ -141,10 +171,45 @@ V6D smoothness_factor(V6D msg_v, V4D state)
 	return msg;
 }
 
-void send_message_4connect(double* node, int* sae, uint16 x, uint16 y, int t, int H, int W, V6D belief)
+void send_message_Nconnect_fast(double* node, int* sae, uint16 x, uint16 y, int t, int H, int W, V6D belief)
 {
     V4D state;
-    V6D self, come, node_to;
+    V6D *self, *come, *node_to;
+    V6D msg_v, msg_p;
+    int ind, ind_to, ind_sae;
+
+    // get state of self node
+    int ind_self = sub2ind(x, y, 0, 0, H, W); // node_index, dir
+    self = get_state_ptr(node, ind_self);
+    state(0) = (*self)(0);
+    state(1) = (*self)(1);
+
+    // variable message
+    for(int dir=2; dir<2+N_EDGE; dir++){ // 4 direction
+        ind_sae = sub2ind_sae(x, y, dir, H, W);     // 送る方向から来るmassageを確認
+        if ((t - sae[ind_sae]) < DT_ACT){           // activeなときはそれを引いておかなければいけない
+            ind = sub2ind(x, y, dir, 0, H, W);      // [dir, 0]
+            come = get_state_ptr(node, ind);
+            msg_v = belief - *come;
+        }else{
+            msg_v = belief;
+        }
+        // get state of destination node
+        ind_to      = sub2ind(x, y, IDX_OBS, dir, H, W); // [0, dir]
+        node_to = get_state_ptr(node, ind_to);
+        state(2)    = (*node_to)(0);
+        state(3)    = (*node_to)(1);
+        // prior factor message
+        msg_p       = smoothness_factor(msg_v, state);
+        ind         = sub2ind(x, y, dirc_idx[dir], dir, H, W); // [?, ?]
+        set_state(node, ind, &msg_p);
+    }
+}
+void send_message_Nconnect(double* node, int* sae, uint16 x, uint16 y, int t, int H, int W, V6D belief)
+{
+    V4D state;
+    // V6D self, come, node_to;
+	V6D self, come, node_to;
     V6D msg_v, msg_p;
     int ind, ind_to, ind_sae;
 
@@ -171,7 +236,7 @@ void send_message_4connect(double* node, int* sae, uint16 x, uint16 y, int t, in
         state(3)    = node_to(1);
         // prior factor message
         msg_p       = smoothness_factor(msg_v, state);
-        ind         = sub2ind(x, y, map_set_dirc[dir], dir, H, W); // [?, ?]
+        ind         = sub2ind(x, y, dirc_idx[dir], dir, H, W); // [?, ?]
         set_state(node, ind, &msg_p);
     }
 }
@@ -183,8 +248,8 @@ void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, in
     V6D belief;
 
     // at self node
-    belief = update_state(node, sae, x, y, t, H, W);
-    send_message_4connect(node, sae, x, y, t, H, W, belief);
+    belief = update_state_fast(node, sae, x, y, t, H, W);
+    send_message_Nconnect_fast(node, sae, x, y, t, H, W, belief);
 
     for(int dir=2; dir<2+N_EDGE; dir++){ 			// 4 direction
         ind_sae = sub2ind_sae(x, y, dir, H, W);    // active確認
@@ -192,11 +257,11 @@ void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, in
             x_ = x + dirc[0][dir];
             y_ = y + dirc[1][dir];
             // at self node
-            belief = update_state(node, sae, x_, y_, t, H, W);
-            send_message_4connect(node, sae, x_, y_, t, H, W, belief);
+            belief = update_state_fast(node, sae, x_, y_, t, H, W);
+            send_message_Nconnect_fast(node, sae, x_, y_, t, H, W, belief);
         }
     }
-	update_state(node, sae, x, y, t, H, W);
+	update_state_fast(node, sae, x, y, t, H, W);
 	return;
 }
 
@@ -239,10 +304,10 @@ void init_sae(mem_pool pool){
 
 mem_pool initialize(int B, int H, int W){
 	memset(dirc,0, 2*(2+N_EDGE));
-	memset(map_set_dirc,0, 1*(2+N_EDGE));
+	memset(dirc_idx,0, 1*(2+N_EDGE));
 
-	int8 base_dirc[2][8] = {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
-	int8 base_map_set_dirc[8] = {1,0,3,2,5,4,7,6};  
+	int8 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
+	int8 base_dirc_idx[8]	= {1,0,3,2,5,4,7,6};  
 
 	for (int s_=0; s_<N_SCALE; s_++){
 		int s = N_SCALE - s_ - 1;
@@ -251,19 +316,16 @@ mem_pool initialize(int B, int H, int W){
 			for (int row =0; row<2; row++){
 				dirc[row][offset+col] = (int)pow(2, s) * base_dirc[row][col];
 			}
-			map_set_dirc[offset+col] 	= offset+base_map_set_dirc[col]; 	// [from left message] of [right node]
-		}
-
-		// printf("%d\n", offset);
-		// printf("[%d, %d]~[%d, %d]\n", dirc[0][offset+0], dirc[1][offset+0], dirc[0][offset+7], dirc[1][offset+7]);
-	}
-
-	for (int s_=0; s_<N_SCALE; s_++){
-		for (int col =0; col<NEIGHBOR; col++){
-			int offset = 2+s_*NEIGHBOR;
-			printf("[%d, %d]\n", dirc[0][offset+col], dirc[1][offset+col]);
+			dirc_idx[offset+col] 	= offset+base_dirc_idx[col]; 	// [from left message] of [right node]
 		}
 	}
+
+	// for (int s_=0; s_<N_SCALE; s_++){
+	// 	for (int col =0; col<NEIGHBOR; col++){
+	// 		int offset = 2+s_*NEIGHBOR;
+	// 		printf("[%d, %d]\n", dirc[0][offset+col], dirc[1][offset+col]);
+	// 	}
+	// }
 
     mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*W*H*sizeof(double));

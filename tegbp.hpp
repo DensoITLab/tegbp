@@ -4,7 +4,7 @@
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
 #define N_SCALE 5
-#define NEIGHBOR 4
+#define NEIGHBOR 8
 #define N_EDGE NEIGHBOR*N_SCALE
 #define STS_DIM 6
 #define NOD_DIM STS_DIM*(2+N_EDGE)
@@ -13,7 +13,6 @@ using namespace Eigen;
 
 #define IDX_SLF 0
 #define IDX_OBS 1
-
 
 typedef Matrix<double, 2, 2> M2D;
 typedef Matrix<double, 2, 1> V2D;
