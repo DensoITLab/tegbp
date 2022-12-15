@@ -91,7 +91,7 @@ V6D calc_data_term(V2D v_perp)
 	//  huber
 	double scale   = 1.0;
 	if (huber > 0){
-		double M2      = (v_perp.transpose() * Lam_0 * v_perp)(0);
+		double M2      = (v_perp.transpose() * Lam_R * v_perp)(0);
 		double M       = std::sqrt(M2);
 		if (M2 < huber*huber){
 			double scale   = 1.0;

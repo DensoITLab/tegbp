@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 
 	// Run the main image processing function
 	double start = omp_get_wtime();
-	for (int itr=0;itr<1;itr++){
+	for (int itr=0;itr<10;itr++){
 		process_batch(pool);
 	}
 	double end = omp_get_wtime();
