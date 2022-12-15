@@ -59,7 +59,7 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int W, int
 
 	for(int dir=2; dir<2+N_EDGE; dir++){
 		if ((t - sae[sub2ind_sae(x, y, dir, W, H)]) < DT_ACT){
-			get_state(node, sub2ind(x, y, dir+1, 0, W, H), &msg_from);
+			get_state(node, sub2ind(x, y, dir, 0, W, H), &msg_from);
 			belief = belief + msg_from;
 		}
 	}
@@ -221,8 +221,10 @@ void process_batch(mem_pool pool)
 		set_state(pool.node, sub2ind(x, y, 1, 0, pool.W, pool.H), &obs_msg);
 
 		// Core of message passing
-		message_passing_event(pool.node, pool.sae, x, y, t, pool.W, pool.H);
-    }
+		for(int iter=0; iter<N_ITER; iter++){
+			message_passing_event(pool.node, pool.sae, x, y, t, pool.W, pool.H);
+    	}
+	}
 return;
 }
 
@@ -232,7 +234,8 @@ mem_pool initialize(int B, int H, int W){
 	dirc[1][0] = 0;
 	dirc[0][1] = 0;
 	dirc[1][1] = 0;
-	for (int s=0; s<N_SCALE; s++){
+	for (int s_=0; s_<N_SCALE; s_++){
+		int s = N_SCALE - s_ - 1;
 		int offset = 2+s*NEIGHBOR;
 		dirc[0][offset+0] 	= (int)pow(2, s) * 0;     // left
 		dirc[1][offset+0] 	= (int)pow(2, s) * -1;
@@ -260,8 +263,8 @@ mem_pool initialize(int B, int H, int W){
 			map_set_dirc[offset+6] = offset+7; // [from upper-right message] of [lower-left node]
 			map_set_dirc[offset+7] = offset+6; // [from lower-left message] of [upper-right node]
 		}
-		printf("%d\n", offset);
-		printf("[%d, %d]~[%d, %d]\n", dirc[0][offset+0], dirc[1][offset+0], dirc[0][offset+7], dirc[1][offset+7]);
+		// printf("%d\n", offset);
+		// printf("[%d, %d]~[%d, %d]\n", dirc[0][offset+0], dirc[1][offset+0], dirc[0][offset+7], dirc[1][offset+7]);
 	}
 
     mem_pool pool;
