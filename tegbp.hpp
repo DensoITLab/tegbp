@@ -9,6 +9,7 @@ using namespace Eigen;
 
 #define IDX_SLF 0
 #define IDX_OBS 1
+#define NEIGHBOR 8
 
 
 typedef Matrix<double, 2, 2> M2D;
@@ -19,6 +20,7 @@ typedef Matrix<double, STS_DIM, 1> V6D;
 typedef Matrix<double, NOD_DIM, 1> VND;
 typedef unsigned short uint16;
 typedef unsigned int uint32;
+typedef int8_t int8;
 
 struct mem_pool{
     double * node;

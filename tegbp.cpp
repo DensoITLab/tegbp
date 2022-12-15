@@ -16,9 +16,8 @@
 // #pragma omp barrier
 // #pragma omp barrier
 
-int NEIGHBOR = 8;
-int dirc[2][10];
-int map_set_dirc[10];
+int8_t dirc[2][10];
+int8_t map_set_dirc[10];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
 int sub2ind_sae(uint16 x, uint16 y, int dir, int H, int W){
@@ -67,10 +66,10 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int H, int
 
 	V2D mu = belief_vec_to_mu(belief);
 
-    // beliefはメッセージ送信に使う
+    // Set updated state
     V6D self;
     ind = sub2ind(x, y, IDX_SLF, 0, H, W); // ind of self node, node_index, dir
-    get_state(node, ind, &self); //ここは値をセットする？　そのままだと値が反映されてない
+    get_state(node, ind, &self);
 	self.head(2)=mu;
 	set_state(node, ind, &self);
 	return belief;
@@ -107,7 +106,8 @@ V6D calc_data_term(V2D v_perp)
 V6D smoothness_factor(V6D msg_v, V4D state)
 {
 	double huber    		= 1.0;
-    M4D Lam; Lam << 100.0, 0.0, -100.0, 0.0, 0.0, 100.0, 0.0, -100.0, -100.0, 0.0, 100.0, 0.0, 0.0, -100.0, 0.0, 100.0; // [4 x 4]
+	double sigma			= 100.0;
+    M4D Lam; Lam << sigma, 0.0, -sigma, 0.0, 0.0,sigma, 0.0, -sigma, -sigma, 0.0, sigma, 0.0, 0.0, -sigma, 0.0, sigma; // [4 x 4]
     V4D eta; eta << 0.0, 0.0, 0.0, 0.0;
     
 	//  huber
