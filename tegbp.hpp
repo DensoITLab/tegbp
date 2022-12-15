@@ -3,8 +3,11 @@
 
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
+#define N_SCALE 5
+#define NEIGHBOR 8
+#define N_EDGE NEIGHBOR*N_SCALE
 #define STS_DIM 6
-#define NOD_DIM STS_DIM*6
+#define NOD_DIM STS_DIM*(2+N_EDGE)
 #define DT_ACT 50000
 
 #define IDX_SLF 0
