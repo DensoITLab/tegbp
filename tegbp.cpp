@@ -16,9 +16,8 @@
 // #pragma omp barrier
 // #pragma omp barrier
 
-int NEIGHBOR = 8;
-int dirc[2][10];
-int map_set_dirc[10];
+int dirc[2][2+N_EDGE]; // 2+NEIGHBOR*N_SCALE
+int map_set_dirc[2+N_EDGE];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
 int sub2ind_sae(uint16 x, uint16 y, int dir, int W, int H){
@@ -58,7 +57,7 @@ V6D update_state(double * node, int* sae, uint16 x, uint16 y, int t,  int W, int
 	int ind = sub2ind(x, y, 1, 0, W, H);
 	get_state(node, ind, &belief); // ind of obs node, node_index, dir 
 
-	for(int dir=2;dir<2+NEIGHBOR;dir++){
+	for(int dir=2; dir<2+N_EDGE; dir++){
 		if ((t - sae[sub2ind_sae(x, y, dir, W, H)]) < DT_ACT){
 			get_state(node, sub2ind(x, y, dir+1, 0, W, H), &msg_from);
 			belief = belief + msg_from;
@@ -155,7 +154,7 @@ void send_message_4connect(double* node, int* sae, uint16 x, uint16 y, int t, in
     state(1) = self(1);
 
     // variable message
-    for(int dir=2; dir<2+NEIGHBOR; dir++){ // 4 direction
+    for(int dir=2; dir<2+N_EDGE; dir++){ // 4 direction
         ind_sae = sub2ind_sae(x, y, dir, W, H);     // 送る方向から来るmassageを確認
         if ((t - sae[ind_sae]) < DT_ACT){           // activeなときはそれを引いておかなければいけない
             ind = sub2ind(x, y, dir, 0, W, H);      // [dir, 0]
@@ -186,7 +185,7 @@ void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, in
     belief = update_state(node, sae, x, y, t, W, H);
     send_message_4connect(node, sae, x, y, t, W, H, belief);
 
-    for(int dir=2; dir<2+NEIGHBOR; dir++){ // 4 direction
+    for(int dir=2; dir<2+N_EDGE; dir++){ 			// 4 direction
         ind_sae = sub2ind_sae(x, y, dir, W, H);    // active確認
         if ((t - sae[ind_sae]) < DT_ACT){                   // message passing at neighbor node if active
             x_ = x + dirc[0][dir];
@@ -233,30 +232,37 @@ mem_pool initialize(int B, int H, int W){
 	dirc[1][0] = 0;
 	dirc[0][1] = 0;
 	dirc[1][1] = 0;
-	dirc[0][2] = 0;     // left
-	dirc[1][2] = -1;
-	dirc[0][3] = 0;     // right
-	dirc[1][3] = 1;
-	dirc[0][4] = -1;    // up
-	dirc[1][4] = 0;
-	dirc[0][5] = 1;     // down
-	dirc[1][5] = 0;
-	map_set_dirc[2] = 3; // [from left message] of [right node]
-	map_set_dirc[3] = 2; // [from right message] of [left node]
-	map_set_dirc[4] = 5; // [from up message] of [down node]
-	map_set_dirc[5] = 4; // [from down message] of [up node]
-	dirc[0][6] = -1;     	// upper-left
-	dirc[1][6] = -1;
-	dirc[0][7] = 1;     	// lower-right
-	dirc[1][7] = 1;
-	dirc[0][8] = -1;        // upper-right
-	dirc[1][8] = 1;
-	dirc[0][9] = 1;         // lower-left
-	dirc[1][9] = -1;
-	map_set_dirc[6] = 7; // [from upper-left message] of [lower-right node]
-	map_set_dirc[7] = 6; // [from lower-right message] of [upper-left node]
-	map_set_dirc[8] = 9; // [from upper-right message] of [lower-left node]
-	map_set_dirc[9] = 8; // [from lower-left message] of [upper-right node]
+	for (int s=0; s<N_SCALE; s++){
+		int offset = 2+s*NEIGHBOR;
+		dirc[0][offset+0] 	= (int)pow(2, s) * 0;     // left
+		dirc[1][offset+0] 	= (int)pow(2, s) * -1;
+		dirc[0][offset+1] 	= (int)pow(2, s) * 0;     // right
+		dirc[1][offset+1] 	= (int)pow(2, s) * 1;
+		dirc[0][offset+2] 	= (int)pow(2, s) * -1;    // up
+		dirc[1][offset+2] 	= (int)pow(2, s) * 0;
+		dirc[0][offset+3] 	= (int)pow(2, s) * 1;     // down
+		dirc[1][offset+3] 	= (int)pow(2, s) * 0;
+		map_set_dirc[offset+0] 	= offset+1; 	// [from left message] of [right node]
+		map_set_dirc[offset+1] 	= offset+0; 	// [from right message] of [left node]
+		map_set_dirc[offset+2] 	= offset+3; 	// [from up message] of [down node]
+		map_set_dirc[offset+3] 	= offset+2; 	// [from down message] of [up node]
+		if (NEIGHBOR==8){
+			dirc[0][offset+4] = (int)pow(2, s) * -1;     // upper-left
+			dirc[1][offset+4] = (int)pow(2, s) * -1;
+			dirc[0][offset+5] = (int)pow(2, s) * 1;     	// lower-right
+			dirc[1][offset+5] = (int)pow(2, s) * 1;
+			dirc[0][offset+6] = (int)pow(2, s) * -1;     // upper-right
+			dirc[1][offset+6] = (int)pow(2, s) * 1;
+			dirc[0][offset+7] = (int)pow(2, s) * 1;      // lower-left
+			dirc[1][offset+7] = (int)pow(2, s) * -1;
+			map_set_dirc[offset+4] = offset+5; // [from upper-left message] of [lower-right node]
+			map_set_dirc[offset+5] = offset+4; // [from lower-right message] of [upper-left node]
+			map_set_dirc[offset+6] = offset+7; // [from upper-right message] of [lower-left node]
+			map_set_dirc[offset+7] = offset+6; // [from lower-left message] of [upper-right node]
+		}
+		printf("%d\n", offset);
+		printf("[%d, %d]~[%d, %d]\n", dirc[0][offset+0], dirc[1][offset+0], dirc[0][offset+7], dirc[1][offset+7]);
+	}
 
     mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*W*H*sizeof(double));
