@@ -77,15 +77,21 @@ void debug_output(mem_pool pool){
 
 void save_data(mem_pool pool){
 	printf("Saving data");
-    double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
-	
-	for(uint16 y=0;y<pool.H;y++)
-		for(uint16 x=0;x<pool.W;x++){
-			fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, 0, 0, pool.H, pool.W)+0];
-			fimg[2*(pool.W*y + x)+1] = pool.node[sub2ind(x, y, 0, 0, pool.H, pool.W)+1];
-	}
+	for (int index=0;index<2;index++){
+		double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
+		for(uint16 y=0;y<pool.H;y++)
+			for(uint16 x=0;x<pool.W;x++){
+				fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+0];
+				fimg[2*(pool.W*y + x)+1] = pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+1];
+		}
 
-    std::ofstream myFile ("result/flo.bin", std::ios::out | std::ios::binary);
-    myFile.write ((char *)fimg, 2*pool.W*pool.H*sizeof(double));
+		if (index==0){
+			std::ofstream myFile ("result/flo0.bin", std::ios::out | std::ios::binary);
+			myFile.write ((char *)fimg, 2*pool.W*pool.H*sizeof(double));
+		}else{
+			std::ofstream myFile ("result/flo1.bin", std::ios::out | std::ios::binary);
+			myFile.write ((char *)fimg, 2*pool.W*pool.H*sizeof(double));
+		}
+	}
 	printf("done..\n");
 }
