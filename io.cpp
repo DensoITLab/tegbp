@@ -43,7 +43,7 @@ void load_data_dummy(mem_pool pool){
 
 void load_data_brick(mem_pool pool){
 	printf("Loading bricks data");
-	ifstream ifs("data/bricks.txt");
+	ifstream ifs("data/bricks_1slide.txt");
 	string line;
 
 	getline(ifs, line);
@@ -74,15 +74,14 @@ void debug_output(mem_pool pool){
 	printf("done..\n");
 }
 
-
 void save_data(mem_pool pool, int seq_id, int index){
 	printf("Saving data %d_%04d",index, seq_id);
 	double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
 	#pragma omp parallel for
-	for(uint16 y=0;y<pool.H;y++)
+	for(uint16 y=0; y<pool.H; y++)
 		for(uint16 x=0;x<pool.W;x++){
-			fimg[2*(pool.W*y + x)] = pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+0];
-			fimg[2*(pool.W*y + x)+1] = pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+1];
+			fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+0];
+			fimg[2*(pool.W*y + x)+1] 	= pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+1];
 	}
 
 	stringstream filename;

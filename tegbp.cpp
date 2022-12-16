@@ -278,11 +278,14 @@ void process_batch(mem_pool pool, int b_ptr)
         // double tot      = 0;
 
 		V2D v_perp;
-		v_perp <<  pool.v_norms[2*i+0],  pool.v_norms[2*i+1];
+		v_perp << pool.v_norms[2*i+0], pool.v_norms[2*i+1];
 		uint16 x = pool.indices[2*i+0]; uint16 y = pool.indices[2*i+1]; 
         int t = pool.timestamps[i];
 
 		// printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
+		
+		// update SAE
+		pool.sae[(pool.W*y + x)] = t;
 
 		// Compute data factor
 		V6D obs_msg = calc_data_term(v_perp);

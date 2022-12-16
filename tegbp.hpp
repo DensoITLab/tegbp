@@ -48,6 +48,6 @@ void save_data(mem_pool pool, int seq_id, int index);
 void process_batch(mem_pool pool, int b_ptr);
 mem_pool initialize(int B, int H, int W);
 int sub2ind(uint16 x, uint16 y, int node_index, int dir, int H, int W);
-void init_sae(mem_pool pool);
+// void init_sae(mem_pool pool);
 
 #endif
