@@ -119,14 +119,12 @@ void debug_output(mem_pool pool){
 
 void save_data(mem_pool pool, int seq_id, int index, int c_time){
 	double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
-	memset(fimg, 0.0, pool.W*pool.H*sizeof(double));
+	memset(fimg, 0.0, 2*pool.W*pool.H*sizeof(double));
 
 	int time;
 	#pragma omp parallel for
 	for(uint16 y=0; y<pool.H; y++)
 		for(uint16 x=0;x<pool.W;x++){
-			
-			
 			time = pool.sae[(pool.W*y + x)];
 			if ((c_time-time)<DT_ACT){
 				fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+0];

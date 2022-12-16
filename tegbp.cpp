@@ -120,42 +120,42 @@ double huber_scale_(double M2){
 	return scale;
 }
 
-double huber_scale(V2D v_perp, M2D Lam){
+double huber_scale_v2d(V2D v_perp, M2D Lam){
 	double M2      = (v_perp.transpose() * Lam * v_perp)(0);
 	return huber_scale_(M2);
 }
 
-double huber_scale(V4D v_perp, M4D Lam){
-	double M2      = (v_perp.transpose() * Lam * v_perp)(0);
+double huber_scale_v4d(V4D state, M4D Lam){
+	double M2      = (state.transpose() * Lam * state)(0);
 	return huber_scale_(M2);
 }
 
 V6D calc_data_term(V2D v_perp)
 {
-	double inv_sigma_obs_r	=  1.0/9.0;
-	double inv_sigma_obs_t 	=  1.0/100.0;
+	double inv_sigma2_obs_r	=  1.0/9.0;
+	double inv_sigma2_obs_t =  1.0/100.0;
 	double theta   		    = std::atan(v_perp(1) / v_perp(0));
 
 	M2D R; R << std::cos(theta), -std::sin(theta), std::sin(theta), std::cos(theta);
-	M2D Lam_0; Lam_0 << inv_sigma_obs_r, 0.0, 0.0,  inv_sigma_obs_t;
+	M2D Lam_0; Lam_0 << inv_sigma2_obs_r, 0.0, 0.0,  inv_sigma2_obs_t;
 	M2D Lam_R = R * Lam_0 * R.transpose();
 	V2D eta     = Lam_R * v_perp;
 	V6D obs_msg; obs_msg << eta(0),  eta(1), Lam_R(0,0),  Lam_R(0,1), Lam_R(1,0), Lam_R(1,1);
 
 	//  huber
-	return obs_msg * huber_scale(v_perp, Lam_R);
+	return obs_msg * huber_scale_v2d(v_perp, Lam_R);
 }
 
 V6D smoothness_factor(V6D msg_v, V4D state)
 {
 	double huber    		= 1.0;
 	double huber2    		= huber*huber;
-	double sigma			= 100.0;
-    M4D Lam; Lam << sigma, 0.0, -sigma, 0.0, 0.0,sigma, 0.0, -sigma, -sigma, 0.0, sigma, 0.0, 0.0, -sigma, 0.0, sigma; // [4 x 4]
+	double inv_sigma2_prior = 1.0 / 0.25;
+    M4D Lam; Lam << inv_sigma2_prior, 0.0, -inv_sigma2_prior, 0.0, 0.0, inv_sigma2_prior, 0.0, -inv_sigma2_prior, -inv_sigma2_prior, 0.0, inv_sigma2_prior, 0.0, 0.0, -inv_sigma2_prior, 0.0, inv_sigma2_prior; // [4 x 4]
     V4D eta; eta << 0.0, 0.0, 0.0, 0.0;
     
 	//  huber
-    double scale   = huber_scale(state, Lam);;
+    double scale   = huber_scale_v4d(state, Lam);;
 
 	Lam = Lam * scale;
 	eta = eta * scale;
