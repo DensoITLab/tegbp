@@ -27,6 +27,7 @@ typedef Matrix<double, 4, 1> V4D;
 typedef Matrix<double, STS_DIM, 1> V6D;
 typedef Matrix<double, NOD_DIM, 1> VND;
 typedef unsigned short uint16;
+typedef short int16;
 typedef unsigned int uint32;
 typedef int8_t int8;
 
@@ -34,7 +35,7 @@ struct mem_pool{
     double * node;
     int * sae ;
     double * v_norms;
-    uint16 *indices;
+    int16 *indices;
     int *timestamps;
     int H;
     int W;
@@ -48,6 +49,6 @@ void debug_output(mem_pool pool);
 void save_data(mem_pool pool, int seq_id, int index, int c_time);
 void process_batch(mem_pool pool, int b_ptr);
 mem_pool initialize(mem_pool pool);
-int sub2ind(uint16 x, uint16 y, int node_index, int dir, int H, int W);
+int sub2ind(int16 x, int16 y, int node_index, int dir, int H, int W);
 // void init_sae(mem_pool pool);
 #endif

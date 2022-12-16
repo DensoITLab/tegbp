@@ -26,7 +26,7 @@ void load_data_dummy(mem_pool pool){
     // printf("Generating dummy data");
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<uint16> rand_idx(32, pool.W-32);
+	std::uniform_int_distribution<int16> rand_idx(32, pool.W-32);
 	std::uniform_int_distribution<int> rand_time(1000, 1000000);
 	std::uniform_real_distribution<> rand_val(0.0, 1.0);
 	for(int i=0;i<pool.B;i++){
@@ -53,8 +53,8 @@ void load_data_txt(mem_pool pool, std::string data_name){
 	int n = 0;
     while (getline(ifs, line) && n<pool.B) {
         vector<string> strvec = split(line, ',');
-		pool.indices[2*n+0] = (uint16)stoi(strvec.at(0)); // x
-		pool.indices[2*n+1] = (uint16)stoi(strvec.at(1)); // y
+		pool.indices[2*n+0] = (int16)stoi(strvec.at(0)); // x
+		pool.indices[2*n+1] = (int16)stoi(strvec.at(1)); // y
 		pool.v_norms[2*n+0] = stod(strvec.at(4)); // vx_perp
 		pool.v_norms[2*n+1] = stod(strvec.at(5)); // vy_perp
 		pool.timestamps[n] 	= stoi(strvec.at(2)); // t
@@ -108,9 +108,9 @@ mem_pool load_data(std::string data_name){
 
 void debug_output(mem_pool pool){
 	printf("Saving data");
-	for(uint16 y=0;y<pool.H/6;y++){
+	for(int16 y=0;y<pool.H/6;y++){
 		printf("\n");
-		for(uint16 x=0;x<pool.W/6;x++){
+		for(int16 x=0;x<pool.W/6;x++){
 			printf("%04.1f|", pool.node[sub2ind(x, y, 0, 0, pool.H, pool.W)]);
 		}
 	}
@@ -123,8 +123,8 @@ void save_data(mem_pool pool, int seq_id, int index, int c_time){
 
 	int time;
 	#pragma omp parallel for
-	for(uint16 y=0; y<pool.H; y++)
-		for(uint16 x=0;x<pool.W;x++){
+	for(int16 y=0; y<pool.H; y++)
+		for(int16 x=0;x<pool.W;x++){
 			time = pool.sae[(pool.W*y + x)];
 			if ((c_time-time)<DT_ACT){
 				fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+0];
