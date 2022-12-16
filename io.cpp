@@ -48,7 +48,7 @@ void load_data_txt(mem_pool pool, std::string data_name){
 	string line;
 
 	getline(ifs, line);
-	cout << line << '\n';
+	// cout << line << '\n';
 
 	int n = 0;
     while (getline(ifs, line) && n<pool.B) {

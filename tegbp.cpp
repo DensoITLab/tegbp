@@ -274,7 +274,7 @@ void process_batch(mem_pool pool, int b_ptr)
 {
 	#pragma omp parallel for
 	// #pragma omp for nowait
-    for(int i=b_ptr; i<(b_ptr+WINSIZE); i++){
+    for(int i=b_ptr; i<(b_ptr+pool.WINSIZE); i++){
         // double count    = 0;
         // double tot      = 0;
 

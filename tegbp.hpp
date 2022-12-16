@@ -9,7 +9,7 @@ using namespace Eigen;
 #define STS_DIM 6
 #define NOD_DIM STS_DIM*(2+N_EDGE)
 #define DT_ACT 50000
-#define WINSIZE 5000
+// #define WINSIZE 5000
 
 // #define N_ITER 1
 
@@ -40,6 +40,7 @@ struct mem_pool{
     int W;
     int B;
     std::string data_name;
+    int WINSIZE;
 };
 
 mem_pool load_data(std::string data_name);
