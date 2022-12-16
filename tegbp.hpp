@@ -43,8 +43,6 @@ struct mem_pool{
 };
 
 mem_pool load_data(std::string data_name);
-// void load_data_brick(mem_pool pool);
-// void load_data_dummy(mem_pool pool);
 void debug_output(mem_pool pool);
 void save_data(mem_pool pool, int seq_id, int index);
 void process_batch(mem_pool pool, int b_ptr);

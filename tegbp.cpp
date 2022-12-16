@@ -269,6 +269,7 @@ void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, in
 	return;
 }
 
+
 void process_batch(mem_pool pool, int b_ptr)
 {
 	#pragma omp parallel for
