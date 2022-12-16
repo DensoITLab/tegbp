@@ -189,7 +189,7 @@ void send_message_Nconnect_fast(double* node, int* sae, uint16 x, uint16 y, int 
     state(1) = (*self)(1);
 
     // variable message
-    for(int dir=2; dir<2+N_EDGE; dir++){ // 4 direction
+    for(int dir=2; dir<2+N_EDGE; dir++){ 			// connected edge
         ind_sae = sub2ind_sae(x, y, dir, H, W);     // 送る方向から来るmassageを確認
         if ((t - sae[ind_sae]) < DT_ACT){           // activeなときはそれを引いておかなければいけない
             ind = sub2ind(x, y, dir, 0, H, W);      // [dir, 0]
@@ -199,13 +199,13 @@ void send_message_Nconnect_fast(double* node, int* sae, uint16 x, uint16 y, int 
             msg_v = belief;
         }
         // get state of destination node
-        ind_to      = sub2ind(x, y, IDX_OBS, dir, H, W); // [0, dir]
+        ind_to      = sub2ind(x, y, IDX_OBS, dir, H, W); 		// [0, dir]
         node_to = get_state_ptr(node, ind_to);
         state(2)    = (*node_to)(0);
         state(3)    = (*node_to)(1);
         // prior factor message
         msg_p       = smoothness_factor(msg_v, state);
-        ind         = sub2ind(x, y, dirc_idx[dir], dir, H, W); // [?, ?]
+        ind         = sub2ind(x, y, dirc_idx[dir], dir, H, W); 	// [?, ?]
         set_state(node, ind, &msg_p);
     }
 }

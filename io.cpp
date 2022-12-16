@@ -43,7 +43,7 @@ void load_data_dummy(mem_pool pool){
 
 void load_data_brick(mem_pool pool){
 	printf("Loading bricks data");
-	ifstream ifs("data/bricks_1slide.txt");
+	ifstream ifs("data/bricks.txt");
 	string line;
 
 	getline(ifs, line);
@@ -59,7 +59,31 @@ void load_data_brick(mem_pool pool){
 		pool.timestamps[n] 	= stoi(strvec.at(2)); // t
 		n++;
     }
-	printf("done..\n");
+	printf("load %d events..\n", n);
+    return;
+}
+
+void load_data_txt(mem_pool pool, string filename){
+	stringstream filepath;
+	filepath << "data/"  << filename << ".txt";
+	cout << "Loading " << filepath.str() << '\n';
+	ifstream ifs(filepath.str());
+	string line;
+
+	getline(ifs, line);
+	cout << line << '\n';
+
+	int n = 0;
+    while (getline(ifs, line) && n<pool.B) {
+        vector<string> strvec = split(line, ',');
+		pool.indices[2*n+0] = stoi(strvec.at(0)); // x
+		pool.indices[2*n+1] = stoi(strvec.at(1)); // y
+		pool.v_norms[2*n+0] = stod(strvec.at(4)); // vx_perp
+		pool.v_norms[2*n+1] = stod(strvec.at(5)); // vy_perp
+		pool.timestamps[n] 	= stoi(strvec.at(2)); // t
+		n++;
+    }
+	printf("load %d events..\n", n);
     return;
 }
 

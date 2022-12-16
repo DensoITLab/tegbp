@@ -41,6 +41,7 @@ struct mem_pool{
     int B;
 };
 
+void load_data_txt(mem_pool pool, std::string filename);
 void load_data_brick(mem_pool pool);
 void load_data_dummy(mem_pool pool);
 void debug_output(mem_pool pool);

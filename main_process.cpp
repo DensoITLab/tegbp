@@ -11,10 +11,15 @@
 int main(int argc, char **argv)
 {
 	// Setup OMP
-	int num_thread 		= omp_get_max_threads();
-	int W 			    = 272;
-	int H 			    = 208;
-	int B 		        = 10000;
+	int num_thread 			= omp_get_max_threads();
+	// int W 			    	= 272;
+	// int H 			    	= 208;
+	// int B 		        	= 30000;
+	// std::string filename 	= "bricks";
+	int W 			    	= 368;
+	int H 			    	= 288;
+	int B 		        	= 100000;
+	std::string filename 	= "indoor_flying2";
 
 	if (argc>1){
 		num_thread = atoi(argv[1]);
@@ -30,14 +35,15 @@ int main(int argc, char **argv)
 
 	// Load data
 	// load_data_dummy(pool);
-	load_data_brick(pool);
+	// load_data_brick(pool);
+	load_data_txt(pool, filename);
 
 	// init_sae(pool); // should update sae in process batch
 
 	// Run the main image processing function
 	double ellapse 	= 0;
 	int b_ptr 		= 0;
-	int n_itr 		= 3; // shoud be B/WINSIZE
+	int n_itr 		= 10; // shoud be B/WINSIZE
 	int n_itr_show 	= 1;
 	for (int itr=0; itr<n_itr; itr++){
 		double start = omp_get_wtime();
@@ -48,7 +54,7 @@ int main(int argc, char **argv)
 		// }
  		double end = omp_get_wtime();
 
-		b_ptr 	= b_ptr + (WINSIZE*0); 
+		b_ptr 	= b_ptr + (WINSIZE*1); 
 		ellapse = ellapse + (end-start);
 
 		if (itr%n_itr_show==0){
