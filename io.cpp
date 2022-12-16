@@ -65,6 +65,7 @@ void load_data_txt(mem_pool pool, std::string data_name){
     return;
 }
 
+
 mem_pool load_data(std::string data_name){
 	mem_pool pool;
 	printf("Loading %s\n", data_name.c_str());
