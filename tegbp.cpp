@@ -20,6 +20,9 @@
 int16 dirc[2][2+N_EDGE]; // 2+NEIGHBOR*N_SCALE
 int16 dirc_idx[2+N_EDGE];
 
+// static int16 dirc[2][2+N_EDGE] = {0,0,0,0,-1,1,-1,1,-1,1,0,0,-2,2,-2,2,-2,2,0,0,-4,4,-4,4,-4,4,0,0,-8,8,-8,8,-8,8,0,0,-16,16,-16,16,-16,16,0,0,-1,1,0,0,-1,1,1,-1,-2,2,0,0,-2,2,2,-2,-4,4,0,0,-4,4,4,-4,-8,8,0,0,-8,8,8,-8,-16,16,0,0,-16,16,16,-16};
+// static int16 dirc_idx[2+N_EDGE] = {0,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14,17,16,19,18,21,20,23,22,25,24,27,26,29,28,31,30,33,32,35,34,37,36,39,38,41,40};
+
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
 int sub2ind_sae(int16 x, int16 y, int dir, int H, int W){
 	return (x+dirc[0][dir] + W*(y+dirc[1][dir]));
@@ -301,30 +304,37 @@ return;
 
 
 mem_pool initialize(mem_pool pool){
+	if (1){
+		memset(dirc,0, 2*(2+N_EDGE));
+		memset(dirc_idx,0, 1*(2+N_EDGE));
 
-	memset(dirc,0, 2*(2+N_EDGE));
-	memset(dirc_idx,0, 1*(2+N_EDGE));
+		int16 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
+		int16 base_dirc_idx[8]	= {1,0,3,2,5,4,7,6};  
 
-	int16 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
-	int16 base_dirc_idx[8]	= {1,0,3,2,5,4,7,6};  
-
-	for (int s_=0; s_<N_SCALE; s_++){
-		int s = N_SCALE - s_ - 1;
-		int offset = 2+s*NEIGHBOR;
-		for (int col =0; col<NEIGHBOR; col++){
-			for (int row =0; row<2; row++){
-				dirc[row][offset+col] = (int)pow(2, s) * base_dirc[row][col];
+		for (int s_=0; s_<N_SCALE; s_++){
+			int s = N_SCALE - s_ - 1;
+			int offset = 2+s*NEIGHBOR;
+			for (int col =0; col<NEIGHBOR; col++){
+				for (int row =0; row<2; row++){
+					dirc[row][offset+col] = (int)pow(2, s) * base_dirc[row][col];
+				}
+				dirc_idx[offset+col] 	= offset+base_dirc_idx[col]; 	// [from left message] of [right node]
 			}
-			dirc_idx[offset+col] 	= offset+base_dirc_idx[col]; 	// [from left message] of [right node]
 		}
 	}
 
-	// for (int s_=0; s_<N_SCALE; s_++){
-	// 	for (int col =0; col<NEIGHBOR; col++){
-	// 		int offset = 2+s_*NEIGHBOR;
-	// 		printf("[%d, %d]\n", dirc[0][offset+col], dirc[1][offset+col]);
-	// 	}
-	// }
+	printf("\n\n");
+	for (int row =0; row<2; row++){
+		for (int col =0; col<(2+N_EDGE); col++){
+			printf("%d,", dirc[row][col]);
+		}
+	}
+	printf("\n\n");
+
+	for (int col =0; col<(2+N_EDGE); col++){
+		printf("%d,", dirc_idx[col]);
+	}
+	printf("\n");
 
     // mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*pool.W*pool.H*sizeof(double));
