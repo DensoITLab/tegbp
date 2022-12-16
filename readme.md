@@ -4,12 +4,22 @@ Code for CVPR submmision 4712.
 - [Overleaf](https://www.overleaf.com/project/634f900abe6816625b0e860e)
 - [PDF](https://github.com/DensoITLab/tegbp/blob/master/material/CVPR2023_4712.pdf)
 
+
+<img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png" alt="normal flow"  title="normal flow">
+<img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png" alt="full flow"  title="full flow">
+
 ## Setup dependency 
 ```
 sudo apt install libeigen3-dev
 pip install Command
 ```
 
+## Prepare result folder
+Local SSD is recomended.
+```
+ln -s /home/data2/cashe/tegbp_result/ result
+sudo chmod -R 777 result
+```
 
 ## Compile 
 ```

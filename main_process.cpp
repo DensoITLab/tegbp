@@ -11,7 +11,7 @@
 int main(int argc, char **argv)
 {
 	// Setup OMP
-	int num_thread 		= 64;
+	int num_thread 		= omp_get_max_threads();
 	int W 			    = 272;
 	int H 			    = 208;
 	int B 		        = 10000;
@@ -37,15 +37,24 @@ int main(int argc, char **argv)
 	// Run the main image processing function
 	double ellapse = 0;
 	int b_ptr = 0;
-	for (int itr=0;itr<10;itr++){
+	int n_itr = 10; // shoud be B/WINSIZE
+	int n_itr_show = 1;
+	for (int itr=0;itr<n_itr;itr++){
 		double start = omp_get_wtime();
+		printf("process_batch %d, %d\n",b_ptr, (b_ptr+WINSIZE));
+		// #pragma omp parallel
+		// {
 		process_batch(pool, b_ptr);
+		// }
  		double end = omp_get_wtime();
 
 		b_ptr = b_ptr + (WINSIZE*0); 
 		ellapse = ellapse + (end-start);
-		save_data(pool, itr, 0);
-		save_data(pool, itr, 1);
+
+		if (itr%n_itr_show==0){
+			save_data(pool, itr, 0);
+			save_data(pool, itr, 1);
+		}
 	}
 	printf("Work took %f seconds for %d K events (num_thread: %d)\n",ellapse, B/1000, num_thread);
 

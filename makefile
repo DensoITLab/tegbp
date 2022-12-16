@@ -9,3 +9,4 @@ test: process
 
 clean:
 	rm process 
+	rm ./result/*

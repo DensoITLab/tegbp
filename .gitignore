@@ -3,5 +3,6 @@
 data/*
 process
 result/
+result_/
 __pycache__/
 ._*

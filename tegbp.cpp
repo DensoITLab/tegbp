@@ -15,6 +15,7 @@
 // #pragma omp critical
 // #pragma omp barrier
 // #pragma omp barrier
+// #pragma omp for nowait
 
 int8 dirc[2][2+N_EDGE]; // 2+NEIGHBOR*N_SCALE
 int8 dirc_idx[2+N_EDGE];
@@ -270,8 +271,8 @@ void message_passing_event(double* node, int* sae, uint16 x, uint16 y, int t, in
 
 void process_batch(mem_pool pool, int b_ptr)
 {
-	printf("process_batch %d, %d\n",b_ptr, (b_ptr+WINSIZE));
 	#pragma omp parallel for
+	// #pragma omp for nowait
     for(int i=b_ptr; i<(b_ptr+WINSIZE); i++){
         // double count    = 0;
         // double tot      = 0;
