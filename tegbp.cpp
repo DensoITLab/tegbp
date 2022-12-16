@@ -300,17 +300,18 @@ void process_batch(mem_pool pool, int b_ptr)
 return;
 }
 
-void init_sae(mem_pool pool){
-	// Init SAE
-    for(int i=0; i<pool.B; i++){
-		uint16 x = pool.indices[2*i+0]; uint16 y = pool.indices[2*i+1]; 
-		pool.sae[(pool.W*y + x)] = pool.timestamps[i];
-		// printf("t: %d..\n",  pool.timestamps[i]);
-	}
-}
+// void init_sae(mem_pool pool){
+// 	// Init SAE
+//     for(int i=0; i<pool.B; i++){
+// 		uint16 x = pool.indices[2*i+0]; uint16 y = pool.indices[2*i+1]; 
+// 		pool.sae[(pool.W*y + x)] = pool.timestamps[i];
+// 		// printf("t: %d..\n",  pool.timestamps[i]);
+// 	}
+// }
 
 
-mem_pool initialize(int B, int H, int W){
+mem_pool initialize(mem_pool pool){
+
 	memset(dirc,0, 2*(2+N_EDGE));
 	memset(dirc_idx,0, 1*(2+N_EDGE));
 
@@ -335,17 +336,16 @@ mem_pool initialize(int B, int H, int W){
 	// 	}
 	// }
 
-    mem_pool pool;
-    pool.node 		= (double *) malloc(NOD_DIM*W*H*sizeof(double));
-	memset(pool.node, 0.0, NOD_DIM*W*H*sizeof(double));
-	pool.sae  	    = (int *) malloc(1*W*H*sizeof(int));
-	memset(pool.sae, -10*DT_ACT, 1*W*H*sizeof(int));
-	pool.v_norms 	= (double *) malloc(2*B*sizeof(double));
-	pool.indices    = (uint16 *) malloc(2*B*sizeof(uint16));
-	pool.timestamps = (int *) malloc(1*B*sizeof(int));
-    pool.B = B;
-    pool.H = H;
-    pool.W = W;
-	
+    // mem_pool pool;
+    pool.node 		= (double *) malloc(NOD_DIM*pool.W*pool.H*sizeof(double));
+	memset(pool.node, 0.0, NOD_DIM*pool.W*pool.H*sizeof(double));
+	pool.sae  	    = (int *) malloc(1*pool.W*pool.H*sizeof(int));
+	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int));
+	pool.v_norms 	= (double *) malloc(2*pool.B*sizeof(double));
+	pool.indices    = (uint16 *) malloc(2*pool.B*sizeof(uint16));
+	pool.timestamps = (int *) malloc(1*pool.B*sizeof(int));
+	printf("initialize memory pool %d  %d  %d\n", pool.B, pool.H, pool.W);
+
+
     return pool;
 }

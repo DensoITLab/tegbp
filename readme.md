@@ -19,6 +19,10 @@ Local SSD is recomended.
 ```
 ln -s /home/data2/cashe/tegbp_result/ result
 sudo chmod -R 777 result
+mkdir result/bricks_1slide
+mkdir result/dummy
+mkdir result/bricks
+mkdir result/indoor_flying2
 ```
 
 ## Compile 

@@ -12,32 +12,37 @@ int main(int argc, char **argv)
 {
 	// Setup OMP
 	int num_thread 		= omp_get_max_threads();
-	int W 			    = 272;
-	int H 			    = 208;
-	int B 		        = 10000;
+	// int W 			    = 272;
+	// int H 			    = 208;
+	// int B 		        = 10000;
+	std::string data_name = "bricks";
 
 	if (argc>1){
-		num_thread = atoi(argv[1]);
+		if (atoi(argv[1])>0){
+			num_thread = atoi(argv[1]);
+		}
 	}
 	omp_set_num_threads(num_thread);
 
+	// if (argc>2){
+	// 	B = atoi(argv[2]);
+	// }
+
 	if (argc>2){
-		B = atoi(argv[2]);
+		data_name = argv[2];
+		printf("Dataset: %s\n", data_name.c_str());
 	}
 
 	// Initialize Global varialble 	by Allocating memory
-	mem_pool pool=initialize(B, H, W);
-
 	// Load data
-	// load_data_dummy(pool);
-	load_data_brick(pool);
+	mem_pool pool = load_data(data_name);
 
 	// init_sae(pool); // should update sae in process batch
 
 	// Run the main image processing function
 	double ellapse 	= 0;
 	int b_ptr 		= 0;
-	int n_itr 		= 3; // shoud be B/WINSIZE
+	int n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
 	int n_itr_show 	= 1;
 	for (int itr=0; itr<n_itr; itr++){
 		double start = omp_get_wtime();
@@ -48,7 +53,7 @@ int main(int argc, char **argv)
 		// }
  		double end = omp_get_wtime();
 
-		b_ptr 	= b_ptr + (WINSIZE*0); 
+		b_ptr 	= b_ptr + (WINSIZE*1); 
 		ellapse = ellapse + (end-start);
 
 		if (itr%n_itr_show==0){
@@ -56,7 +61,7 @@ int main(int argc, char **argv)
 			save_data(pool, itr, 1); // normal flow
 		}
 	}
-	printf("Work took %f seconds for %d K events (num_thread: %d)\n",ellapse, B/1000, num_thread);
+	printf("Work took %f seconds for %d K events (num_thread: %d)\n",ellapse, pool.B/1000, num_thread);
 
 	// Visualize results
 	// debug_output(pool);
