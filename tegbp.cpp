@@ -160,14 +160,12 @@ V6D smoothness_factor(V6D msg_v, V4D state)
 	Lam = Lam * scale;
 	eta = eta * scale;
 
-    M2D Lam_aa, Lam_ab, Lam_bb;
-    V2D eta_a, eta_b;
-    Lam_aa << Lam(0, 0), Lam(0, 1), Lam(1, 0), Lam(1, 1);
-    Lam_ab << Lam(0, 2), Lam(0, 3), Lam(1, 2), Lam(1, 3);
-    Lam_bb << Lam(2, 2) + msg_v(2), Lam(2, 3) + msg_v(3), Lam(3, 2) + msg_v(4), Lam(3, 3) + msg_v(5);
-    eta_a << eta(0, 0), eta(1, 0);
-    eta_b << eta(2, 0) + msg_v(0), eta(3, 0) + msg_v(1);
-
+	M2D Lam_aa = (M2D() << Lam(0, 0), Lam(0, 1), Lam(1, 0), Lam(1, 1)).finished();
+	M2D Lam_ab = (M2D() << Lam(0, 2), Lam(0, 3), Lam(1, 2), Lam(1, 3)).finished();
+	M2D Lam_bb = (M2D() << Lam(2, 2) + msg_v(2), Lam(2, 3) + msg_v(3), Lam(3, 2) + msg_v(4), Lam(3, 3) + msg_v(5)).finished();
+    V2D eta_a  = (V2D() << eta(0, 0), eta(1, 0)).finished();
+    V2D eta_b  = (V2D() << eta(2, 0) + msg_v(0), eta(3, 0) + msg_v(1)).finished();
+	
    	V2D eta_ = eta_a - Lam_ab * Lam_bb.inverse() * eta_b;
    	M2D Lam_ = Lam_aa - Lam_ab * Lam_bb.inverse() * Lam_ab.transpose();
     V6D msg;

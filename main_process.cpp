@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 {
 	// Setup OMP
 	int num_thread 		= omp_get_max_threads();
-	int WINSIZE 		    = 5000;
+	int WINSIZE 		    = 1000;
 	std::string data_name = "bricks";
 
 	if (argc>1){
