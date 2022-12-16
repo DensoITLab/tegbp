@@ -45,12 +45,16 @@ int main(int argc, char **argv)
 	int b_ptr 		= 0;
 	int n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
 	int n_itr_show 	= 1;
+	int c_time 		= 0;
 	for (int itr=0; itr<n_itr; itr++){
 		double start = omp_get_wtime();
-		printf("process_batch %d, %d\n",b_ptr, (b_ptr+WINSIZE));
+		printf("process_batch %d - %d\n",b_ptr, (b_ptr+WINSIZE));
 		// #pragma omp parallel
 		// {
 		process_batch(pool, b_ptr);
+		c_time = pool.timestamps[b_ptr+WINSIZE];
+
+
 		// }
  		double end = omp_get_wtime();
 
@@ -58,8 +62,8 @@ int main(int argc, char **argv)
 		ellapse = ellapse + (end-start);
 
 		if (itr%n_itr_show==0){
-			save_data(pool, itr, 0); // estimated flow
-			save_data(pool, itr, 1); // normal flow
+			save_data(pool, itr, 0, c_time); // estimated flow
+			save_data(pool, itr, 1, c_time); // normal flow
 		}
 	}
 	printf("Work took %f seconds for %d K events (num_thread: %d)\n",ellapse, pool.B/1000, num_thread);

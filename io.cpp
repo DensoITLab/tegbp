@@ -26,8 +26,8 @@ void load_data_dummy(mem_pool pool){
     // printf("Generating dummy data");
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<uint16> rand_idx(1, pool.W-2);
-	std::uniform_int_distribution<int> rand_time(1, 10);
+	std::uniform_int_distribution<uint16> rand_idx(32, pool.W-32);
+	std::uniform_int_distribution<int> rand_time(1000, 1000000);
 	std::uniform_real_distribution<> rand_val(0.0, 1.0);
 	for(int i=0;i<pool.B;i++){
 		pool.indices[2*i+0] = rand_idx(gen);
@@ -81,14 +81,14 @@ mem_pool load_data(std::string data_name){
     	pool.B = 15000;
 	}
 	if (data_name == "indoor_flying2"){
-		pool.W = 288;
-    	pool.H = 368;
+		pool.W = 368;
+    	pool.H = 288;
     	pool.B = 2921002;
 	}
 	if (data_name == "dummy"){
 		pool.W = 272;
     	pool.H = 208;
-    	pool.B = 100000;
+    	pool.B = 15000;
 	}
 	pool.data_name = data_name;
 	pool = initialize(pool);
@@ -117,17 +117,25 @@ void debug_output(mem_pool pool){
 	printf("done..\n");
 }
 
-void save_data(mem_pool pool, int seq_id, int index){
+void save_data(mem_pool pool, int seq_id, int index, int c_time){
 	double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
+	memset(fimg, 0.0, pool.W*pool.H*sizeof(double));
+
+	int time;
 	#pragma omp parallel for
 	for(uint16 y=0; y<pool.H; y++)
 		for(uint16 x=0;x<pool.W;x++){
-			fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+0];
-			fimg[2*(pool.W*y + x)+1] 	= pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+1];
+			
+			
+			time = pool.sae[(pool.W*y + x)];
+			if ((c_time-time)<DT_ACT){
+				fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+0];
+				fimg[2*(pool.W*y + x)+1] 	= pool.node[sub2ind(x, y, index, 0, pool.H, pool.W)+1];
+			}
 	}
 
 	stringstream filename;
-	filename << "result/" << pool.data_name << "/flo_"  << index <<  "_" << std::setw(5) << std::setfill('0') << seq_id << ".bin";
+	filename << "result/" << pool.data_name << "/bin/flo_"  << index <<  "_" << std::setw(5) << std::setfill('0') << seq_id << ".bin";
 	std::ofstream myFile (filename.str(), std::ios::out | std::ios::binary);
 	myFile.write ((char *)fimg, 2*pool.W*pool.H*sizeof(double));
 	printf("Saving data %s, %d_%04d\n",filename.str().c_str(), index, seq_id);

@@ -45,7 +45,7 @@ struct mem_pool{
 
 mem_pool load_data(std::string data_name);
 void debug_output(mem_pool pool);
-void save_data(mem_pool pool, int seq_id, int index);
+void save_data(mem_pool pool, int seq_id, int index, int c_time);
 void process_batch(mem_pool pool, int b_ptr);
 mem_pool initialize(mem_pool pool);
 int sub2ind(uint16 x, uint16 y, int node_index, int dir, int H, int W);
