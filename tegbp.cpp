@@ -17,43 +17,43 @@
 // #pragma omp barrier
 // #pragma omp for nowait
 
-int16 dirc[2][N_EDGE]; // NEIGHBOR*N_SCALE
-int16 dirc_idx[N_EDGE];
+int32 dirc[2][N_EDGE]; // NEIGHBOR*N_SCALE
+int32 dirc_idx[N_EDGE];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
 // #pragma omp declare simd
-// int sub2ind_sae(int16 x, int16 y, int dir, int16 H, int16 W){
+// int sub2ind_sae(int32 x, int32 y, int dir, int32 H, int32 W){
 // 	return (x+dirc[0][dir] + W*(y+dirc[1][dir]));
 // }
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
-int sub2ind_nod_dir(int16 x, int16 y, int dir, int16 H, int16 W){
+int sub2ind_nod_dir(int32 x, int32 y, int dir, int32 H, int32 W){
 	int ind = NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir])) + (dirc_idx[dir]+IDX_NOD)*STS_DIM;
 	return ind;
 }
-int sub2ind_slf_dir(int16 x, int16 y, int node_index, int dir, int16 H, int16 W){
+int sub2ind_slf_dir(int32 x, int32 y, int node_index, int dir, int32 H, int32 W){
 	int ind =  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir]));
 	return ind;
 }
-int sub2ind_obs_dir(int16 x, int16 y, int dir, int16 H, int16 W){
+int sub2ind_obs_dir(int32 x, int32 y, int dir, int32 H, int32 W){
 	int ind =  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir])) + STS_DIM;
 	return ind;
 }
 #pragma omp declare simd
-int sub2ind_nod(int16 x, int16 y, int node_index, int16 H, int16 W){
+int sub2ind_nod(int32 x, int32 y, int node_index, int32 H, int32 W){
 	int ind =  NOD_DIM*(x + W*y) + (node_index+IDX_NOD)*STS_DIM;
 	return ind;
 }
-int sub2ind_obs(int16 x, int16 y, int16 H, int16 W){
+int sub2ind_obs(int32 x, int32 y, int32 H, int32 W){
 	int ind =  NOD_DIM*(x + W*y) + STS_DIM;
 	return ind;
 }
-int sub2ind_slf(int16 x, int16 y, int16 H, int16 W){
+int sub2ind_slf(int32 x, int32 y, int32 H, int32 W){
 	int ind =  NOD_DIM*(x + W*y);
 	return ind;
 }
 
 #pragma omp declare simd
-bool isActive(int16 x, int16 y, int dir, int16 H, int16 W, int t, int* sae)
+bool isActive(int32 x, int32 y, int dir, int32 H, int32 W, int t, int* sae)
 {
 	return ((t - sae[(x+dirc[0][dir] + W*(y+dirc[1][dir]))]) < DT_ACT);
 }
@@ -84,7 +84,7 @@ V2D belief_vec_to_mu(V6D belief)
 	return (Lam_0+C).inverse() * eta;
 }
 
-V6D update_state(double * node, bool* active, int16 x, int16 y, int t,  int16 H, int16 W)
+V6D update_state(double * node, bool* active, int32 x, int32 y, int t,  int32 H, int32 W)
 {
 	V6D belief;
 	V6D *msg_from;
@@ -177,7 +177,7 @@ V6D smoothness_factor(V6D msg_v, V4D state)
 	return msg;
 }
 
-void send_message_Nconnect(double* node, bool* active, int16 x, int16 y, int t, int16 H, int16 W, V6D belief)
+void send_message_Nconnect(double* node, bool* active, int32 x, int32 y, int t, int32 H, int32 W, V6D belief)
 {
     V4D state;
     V6D *self, *come, *node_to;
@@ -211,7 +211,7 @@ void send_message_Nconnect(double* node, bool* active, int16 x, int16 y, int t, 
 }
 
 
-void message_passing_event(double* node, int* sae, int16 x, int16 y, int t, int16 H, int16 W) // 多分再帰でかける？ k=1 hopだからいいか
+void message_passing_event(double* node, int* sae, int32 x, int32 y, int t, int32 H, int32 W) // 多分再帰でかける？ k=1 hopだからいいか
 {
     int x_, y_, x__, y__;
     V6D belief;
@@ -249,7 +249,7 @@ void process_batch(mem_pool pool, int b_ptr)
 	// update SAE
 	// #pragma omp parallel for
     // for(int i=b_ptr; i<(b_ptr+pool.WINSIZE); i++){
-	// 	int16 x = pool.indices[2*i+0]; int16 y = pool.indices[2*i+1]; 
+	// 	int32 x = pool.indices[2*i+0]; int32 y = pool.indices[2*i+1]; 
     //     int t = pool.timestamps[i];
 	// 	pool.sae[(pool.W*y + x)] = t;
 	// }
@@ -260,7 +260,7 @@ void process_batch(mem_pool pool, int b_ptr)
         // double tot      = 0;
 
 		V2D v_perp = (V2D() << pool.v_norms[2*i+0], pool.v_norms[2*i+1]).finished();
-		int16 x = pool.indices[2*i+0]; int16 y = pool.indices[2*i+1]; 
+		int32 x = pool.indices[2*i+0]; int32 y = pool.indices[2*i+1]; 
         int t = pool.timestamps[i];
 
 		// printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
@@ -285,8 +285,8 @@ mem_pool initialize(mem_pool pool){
 	memset(dirc,0, 2*(N_EDGE));
 	memset(dirc_idx,0, 1*(N_EDGE));
 
-	int16 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
-	int16 base_dirc_idx[8]	= {1,  0,  3,  2,  5,  4,  7,  6};  
+	int32 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
+	int32 base_dirc_idx[8]	= {1,  0,  3,  2,  5,  4,  7,  6};  
 
 	for (int s_=0; s_<N_SCALE; s_++){
 		int s = N_SCALE - s_ - 1;
@@ -299,18 +299,19 @@ mem_pool initialize(mem_pool pool){
 		}
 	}
 
-	// printf("\n\n");
-	// for (int row =0; row<2; row++){
-	// 	for (int col =0; col<(N_EDGE); col++){
-	// 		printf("%d,", dirc[row][col]);
-	// 	}
-	// }
-	// printf("\n\n");
+	printf("\n\n");
+	for (int row =0; row<2; row++){
+		for (int col =0; col<(N_EDGE); col++){
+			printf("%d,", dirc[row][col]);
+		}
+	}
+	printf("\n\n");
 
-	// for (int col =0; col<(N_EDGE); col++){
-	// 	printf("%d,", dirc_idx[col]);
-	// }
-	// printf("\n");
+	for (int col =0; col<(N_EDGE); col++){
+		printf("%d,", dirc_idx[col]);
+	}
+	printf("\n");
+	
 
     // mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*pool.W*pool.H*sizeof(double));
@@ -318,7 +319,7 @@ mem_pool initialize(mem_pool pool){
 	pool.sae  	    = (int *) malloc(1*pool.W*pool.H*sizeof(int));
 	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int));
 	pool.v_norms 	= (double *) malloc(2*pool.B*sizeof(double));
-	pool.indices    = (int16 *) malloc(2*pool.B*sizeof(int16));
+	pool.indices    = (int32 *) malloc(2*pool.B*sizeof(int32));
 	pool.timestamps = (int *) malloc(1*pool.B*sizeof(int));
 	printf("initialize memory pool %d  %d  %d\n", pool.B, pool.H, pool.W);
     return pool;
