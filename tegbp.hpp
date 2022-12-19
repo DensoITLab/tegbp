@@ -3,22 +3,18 @@
 
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
+#define IDX_SLF 0
+#define IDX_OBS 1
+#define IDX_NOD 2
+
 #define N_SCALE 5
 #define NEIGHBOR 8
 #define N_EDGE NEIGHBOR*N_SCALE
 #define STS_DIM 6
-#define NOD_DIM STS_DIM*(2+N_EDGE)
+#define NOD_DIM STS_DIM*(IDX_NOD+N_EDGE)
 #define DT_ACT 50000
 // #define WINSIZE 5000
-
 // #define N_ITER 1
-
-#define IDX_SLF 0
-#define IDX_OBS 1
-
-#define FAST1
-#define FAST2
-
 
 typedef Matrix<double, 2, 2> M2D;
 typedef Matrix<double, 2, 1> V2D;
@@ -30,6 +26,7 @@ typedef unsigned short uint16;
 typedef short int16;
 typedef unsigned int uint32;
 typedef int8_t int8;
+typedef int int32;
 
 struct mem_pool{
     double * node;
@@ -50,7 +47,7 @@ void save_data(mem_pool pool, int seq_id, int index, int c_time);
 void process_batch(mem_pool pool, int b_ptr);
 mem_pool initialize(mem_pool pool);
 int sub2ind(int16 x, int16 y, int node_index, int dir, int16 H, int16 W);
-int sub2ind_10(int16 x, int16 y, int16 H, int16 W);
-int sub2ind_00(int16 x, int16 y, int16 H, int16 W);
+int sub2ind_obs(int16 x, int16 y, int16 H, int16 W);
+int sub2ind_slf(int16 x, int16 y, int16 H, int16 W);
 // void init_sae(mem_pool pool);
 #endif

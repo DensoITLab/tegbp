@@ -11,8 +11,9 @@
 int main(int argc, char **argv)
 {
 	// Setup OMP
-	int num_thread 		= omp_get_max_threads();
+	int num_thread 			= omp_get_max_threads();
 	int WINSIZE 		    = 1000;
+	int n_itr_show 			= 1;
 	std::string data_name = "bricks";
 
 	if (argc>1){
@@ -28,7 +29,13 @@ int main(int argc, char **argv)
 	}
 
 	if (argc>3){
-		WINSIZE = atoi(argv[3]);
+		if (atoi(argv[3])>0){
+			WINSIZE = atoi(argv[3]);
+		}
+	}
+
+	if (argc>4){
+		n_itr_show = atoi(argv[4]);
 	}
 
 	printf("Start main dataset: %s WINSIZE %d\n", data_name.c_str(), WINSIZE);
@@ -44,7 +51,6 @@ int main(int argc, char **argv)
 	double ellapse 	= 0;
 	int b_ptr 		= 0;
 	int n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
-	int n_itr_show 	= 1;
 	int c_time 		= 0;
 	for (int itr=0; itr<n_itr; itr++){
 		double start = omp_get_wtime();
@@ -54,20 +60,18 @@ int main(int argc, char **argv)
 		process_batch(pool, b_ptr);
 		// }
 		c_time = pool.timestamps[b_ptr+WINSIZE];
-
-
 		// }
  		double end = omp_get_wtime();
 
 		b_ptr 	= b_ptr + (WINSIZE*1); 
 		ellapse = ellapse + (end-start);
 
-		if (itr%n_itr_show==0){
+		if (n_itr_show>0 & itr%n_itr_show==0){
 			save_data(pool, itr, 0, c_time); // estimated flow
 			save_data(pool, itr, 1, c_time); // normal flow
 		}
 	}
-	printf("Work took %f seconds for %d K events (num_thread: %d)\n",ellapse, pool.B/1000, num_thread);
+	printf("Work took %f seconds for %d K events (num_thread: %d) %5.3f KEPS\n",ellapse, pool.B/1000, num_thread, (pool.B/1000)/ellapse);
 
 	// Visualize results
 	// debug_output(pool);

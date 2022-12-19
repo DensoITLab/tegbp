@@ -17,33 +17,45 @@
 // #pragma omp barrier
 // #pragma omp for nowait
 
-int16 dirc[2][2+N_EDGE]; // 2+NEIGHBOR*N_SCALE
-int16 dirc_idx[2+N_EDGE];
+int16 dirc[2][N_EDGE]; // NEIGHBOR*N_SCALE
+int16 dirc_idx[N_EDGE];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
-#pragma omp declare simd
-int sub2ind_sae(int16 x, int16 y, int dir, int16 H, int16 W){
-	return (x+dirc[0][dir] + W*(y+dirc[1][dir]));
-}
+// #pragma omp declare simd
+// int sub2ind_sae(int16 x, int16 y, int dir, int16 H, int16 W){
+// 	return (x+dirc[0][dir] + W*(y+dirc[1][dir]));
+// }
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
-int sub2ind(int16 x, int16 y, int dir, int16 H, int16 W){
-	return (int16)NOD_DIM*(x+dirc[0][dir] + (int16)W*(y+dirc[1][dir]))+dirc_idx[dir]*(int16)STS_DIM;
+int sub2ind_nod_dir(int16 x, int16 y, int dir, int16 H, int16 W){
+	int ind = NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir])) + (dirc_idx[dir]+IDX_NOD)*STS_DIM;
+	return ind;
 }
-int sub2ind_0x(int16 x, int16 y, int node_index, int dir, int16 H, int16 W){
-	return (int16)NOD_DIM*(x+dirc[0][dir] + (int16)W*(y+dirc[1][dir]));
+int sub2ind_slf_dir(int16 x, int16 y, int node_index, int dir, int16 H, int16 W){
+	int ind =  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir]));
+	return ind;
 }
-int sub2ind_1x(int16 x, int16 y, int dir, int16 H, int16 W){
-	return (int16)NOD_DIM*(x+dirc[0][dir] + (int16)W*(y+dirc[1][dir])) +(int16)STS_DIM;
+int sub2ind_obs_dir(int16 x, int16 y, int dir, int16 H, int16 W){
+	int ind =  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir])) + STS_DIM;
+	return ind;
 }
 #pragma omp declare simd
-int sub2ind_x0(int16 x, int16 y, int node_index, int16 H, int16 W){
-	return (int16)NOD_DIM*(x + W*(y))+node_index*(int16)STS_DIM;
+int sub2ind_nod(int16 x, int16 y, int node_index, int16 H, int16 W){
+	int ind =  NOD_DIM*(x + W*y) + (node_index+IDX_NOD)*STS_DIM;
+	return ind;
 }
-int sub2ind_10(int16 x, int16 y, int16 H, int16 W){
-	return (int16)NOD_DIM*(x + W*(y))+(int16)STS_DIM;
+int sub2ind_obs(int16 x, int16 y, int16 H, int16 W){
+	int ind =  NOD_DIM*(x + W*y) + STS_DIM;
+	return ind;
 }
-int sub2ind_00(int16 x, int16 y, int16 H, int16 W){
-	return NOD_DIM*(x + (int16)W*(y));
+int sub2ind_slf(int16 x, int16 y, int16 H, int16 W){
+	int ind =  NOD_DIM*(x + W*y);
+	return ind;
+}
+
+#pragma omp declare simd
+bool isActive(int16 x, int16 y, int dir, int16 H, int16 W, int t, int* sae)
+{
+	return ((t - sae[(x+dirc[0][dir] + W*(y+dirc[1][dir]))]) < DT_ACT);
 }
 
 // Geter and Setter
@@ -52,7 +64,6 @@ void get_state(double * node, int ind, V6D* data)
 	memcpy(data, &node[ind], sizeof(V6D));
 	return;
 }
-
 V6D* get_state_ptr(double * node, int ind)
 {
 	return (V6D*)&node[ind];
@@ -73,23 +84,16 @@ V2D belief_vec_to_mu(V6D belief)
 	return (Lam_0+C).inverse() * eta;
 }
 
-#pragma omp declare simd
-bool isActive(int t, int t_)
-{
-	return ((t - t_) < DT_ACT);
-}
-
 V6D update_state(double * node, bool* active, int16 x, int16 y, int t,  int16 H, int16 W)
 {
 	V6D belief;
 	V6D *msg_from;
-	int ind = sub2ind_10(x, y,  H, W); //IDX_OBS=1
+	int ind = sub2ind_obs(x, y,  H, W); //IDX_OBS=1
 	get_state(node, ind, &belief); // ind of obs node, node_index, dir 
 
-	// For SIMD 
 	for(int dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
-			msg_from = get_state_ptr(node, sub2ind_x0(x, y, dir+2, H, W));
+			msg_from = get_state_ptr(node, sub2ind_nod(x, y, dir, H, W));
 			belief = belief + *msg_from;
 		}
 	}
@@ -98,7 +102,7 @@ V6D update_state(double * node, bool* active, int16 x, int16 y, int t,  int16 H,
 
     // Set updated state
     V6D *self;
-    ind = sub2ind_00(x, y, H, W); // ind of self node, node_index, dir IDX_SLF=0
+    ind = sub2ind_slf(x, y, H, W); // ind of self node
     self = get_state_ptr(node, ind);
 	(*self).head(2)=mu;
 	set_state(node, ind, self);
@@ -181,28 +185,27 @@ void send_message_Nconnect(double* node, bool* active, int16 x, int16 y, int t, 
     int ind, ind_to, ind_sae;
 
     // get state of self node
-    int ind_self = sub2ind_00(x, y, H, W); // node_index, dir
+    int ind_self = sub2ind_slf(x, y, H, W); // ind of self node
     self = get_state_ptr(node, ind_self);
     state(0) = (*self)(0);
     state(1) = (*self)(1);
 
     // variable message
 	msg_v = belief;
-    for(int dir=0; dir<N_EDGE; dir++){ 			// connected edge
-        // ind_sae = sub2ind_sae(x, y, dir, H, W);     // 送る方向から来るmassageを確認
-        if (active[dir]){           // activeなときはそれを引いておかなければいけない
-            ind = sub2ind_x0(x, y, dir+2, H, W);      // [dir, 0]
+    for(int dir=0; dir<N_EDGE; dir++){ 				// connected edge
+        if (active[dir]){           				// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
+            ind = sub2ind_nod(x, y, dir, H, W);     // [dir, 0]
             come = get_state_ptr(node, ind);
             msg_v = belief - *come;
         }
         // get state of destination node
-        ind_to      = sub2ind_1x(x, y, dir+2, H, W); 		// [0, dir] IDX_OBS=1
-        node_to = get_state_ptr(node, ind_to);
+        ind_to      = sub2ind_obs_dir(x, y, dir, H, W); 		// [0, dir] IDX_OBS=1
+        node_to 	= get_state_ptr(node, ind_to);
         state(2)    = (*node_to)(0);
         state(3)    = (*node_to)(1);
         // prior factor message
         msg_p       = smoothness_factor(msg_v, state);
-        ind         = sub2ind(x, y, dir+2, H, W); 	// [?, ?]
+        ind         = sub2ind_nod_dir(x, y, dir, H, W); 	// [?, ?]
         set_state(node, ind, &msg_p);
     }
 }
@@ -216,23 +219,22 @@ void message_passing_event(double* node, int* sae, int16 x, int16 y, int t, int1
 	// For SIMD 
 	bool active[N_EDGE];
 	bool active_[N_EDGE][N_EDGE];
-
 	for(int dir=0; dir<N_EDGE; dir++){
-		// ind_sae[dir] = sub2ind_sae(x, y, dir+2, H, W);
-		active[dir] = isActive(t, sae[sub2ind_sae(x, y, dir+2, H, W)]);
-		x_ = x + dirc[0][dir+2]; y_ = y + dirc[1][dir+2];
+		active[dir] = isActive(x, y, dir, H, W, t, sae);
+		x_ = x + dirc[0][dir]; y_ = y + dirc[1][dir];
 		for(int dir_=0; dir_<N_EDGE; dir_++){
-			active_[dir][dir_] =  isActive(t, sub2ind_sae(x_, y_, dir+2, H, W));
+			active_[dir][dir_] = isActive(x_, y_, dir_, H, W, t, sae);
 		}
 	}
 
-	// at self node
+	// self node
     belief = update_state(node, active, x, y, t, H, W);
     send_message_Nconnect(node, active, x, y, t, H, W, belief);
-
-    for(int dir=0; dir<N_EDGE; dir++){ 			// 4 direction
+	
+	// neighor node
+    for(int dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
-            x_ = x + dirc[0][dir+2]; y_ = y + dirc[1][dir+2];
+            x_ = x + dirc[0][dir]; y_ = y + dirc[1][dir];
             belief = update_state(node, active_[dir], x_, y_, t, H, W);
             send_message_Nconnect(node, active_[dir], x_, y_, t, H, W, belief);
         }
@@ -269,7 +271,7 @@ void process_batch(mem_pool pool, int b_ptr)
 		// printf("(%3.2f, %3.2f) \n",obs_msg(0), obs_msg(1));
 
 		// Set the observation
-		set_state(pool.node, sub2ind_x0(x, y, IDX_OBS, pool.H, pool.W), &obs_msg);
+		set_state(pool.node, sub2ind_obs(x, y, pool.H, pool.W), &obs_msg); //IDX_OBS =1
 
 		// Core of message passing
 		message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);
@@ -280,37 +282,35 @@ return;
 
 
 mem_pool initialize(mem_pool pool){
-	# if 1
-		memset(dirc,0, 2*(2+N_EDGE));
-		memset(dirc_idx,0, 1*(2+N_EDGE));
+	memset(dirc,0, 2*(N_EDGE));
+	memset(dirc_idx,0, 1*(N_EDGE));
 
-		int16 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
-		int16 base_dirc_idx[8]	= {1,0,3,2,5,4,7,6};  
+	int16 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
+	int16 base_dirc_idx[8]	= {1,  0,  3,  2,  5,  4,  7,  6};  
 
-		for (int s_=0; s_<N_SCALE; s_++){
-			int s = N_SCALE - s_ - 1;
-			int offset = 2+s*NEIGHBOR;
-			for (int col =0; col<NEIGHBOR; col++){
-				for (int row =0; row<2; row++){
-					dirc[row][offset+col] = (int)pow(2, s) * base_dirc[row][col];
-				}
-				dirc_idx[offset+col] 	= offset+base_dirc_idx[col]; 	// [from left message] of [right node]
+	for (int s_=0; s_<N_SCALE; s_++){
+		int s = N_SCALE - s_ - 1;
+		int offset = s*NEIGHBOR;
+		for (int col =0; col<NEIGHBOR; col++){
+			for (int row =0; row<2; row++){
+				dirc[row][offset+col] = (int)pow(2, s) * base_dirc[row][col];
 			}
-		}
-	# endif
-
-	printf("\n\n");
-	for (int row =0; row<2; row++){
-		for (int col =0; col<(2+N_EDGE); col++){
-			printf("%d,", dirc[row][col]);
+			dirc_idx[offset+col] 	= offset+base_dirc_idx[col]; 	// [from left message] of [right node]
 		}
 	}
-	printf("\n\n");
 
-	for (int col =0; col<(2+N_EDGE); col++){
-		printf("%d,", dirc_idx[col]);
-	}
-	printf("\n");
+	// printf("\n\n");
+	// for (int row =0; row<2; row++){
+	// 	for (int col =0; col<(N_EDGE); col++){
+	// 		printf("%d,", dirc[row][col]);
+	// 	}
+	// }
+	// printf("\n\n");
+
+	// for (int col =0; col<(N_EDGE); col++){
+	// 	printf("%d,", dirc_idx[col]);
+	// }
+	// printf("\n");
 
     // mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*pool.W*pool.H*sizeof(double));
