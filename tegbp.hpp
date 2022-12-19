@@ -29,25 +29,23 @@ typedef int8_t int8;
 typedef int int32;
 
 struct mem_pool{
-    double * node;
-    int * sae ;
-    double * v_norms;
+    double *node;
+    double *v_norms;
+    int32 *sae;
     int32 *indices;
-    int *timestamps;
+    int32 *timestamps;
     int32 H;
     int32 W;
-    int B;
+    int32 B;
     std::string data_name;
-    int WINSIZE;
+    int32 WINSIZE;
 };
 
 mem_pool load_data(std::string data_name);
 void debug_output(mem_pool pool);
-void save_data(mem_pool pool, int seq_id, int index, int c_time);
-void process_batch(mem_pool pool, int b_ptr);
+void save_data(mem_pool pool, int32 seq_id, int32 index, int32 c_time);
+void process_batch(mem_pool pool, int32 b_ptr);
 mem_pool initialize(mem_pool pool);
-int sub2ind(int32 x, int32 y, int node_index, int dir, int32 H, int32 W);
-int sub2ind_obs(int32 x, int32 y, int32 H, int32 W);
-int sub2ind_slf(int32 x, int32 y, int32 H, int32 W);
-// void init_sae(mem_pool pool);
+int32 sub2ind_obs(int32 x, int32 y, int32 H, int32 W);
+int32 sub2ind_slf(int32 x, int32 y, int32 H, int32 W);
 #endif

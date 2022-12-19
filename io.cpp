@@ -27,9 +27,9 @@ void load_data_dummy(mem_pool pool){
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<int32> rand_idx(32, pool.W-32);
-	std::uniform_int_distribution<int> rand_time(1000, 1000000);
+	std::uniform_int_distribution<int32> rand_time(1000, 1000000);
 	std::uniform_real_distribution<> rand_val(0.0, 1.0);
-	for(int i=0;i<pool.B;i++){
+	for(int32 i=0;i<pool.B;i++){
 		pool.indices[2*i+0] = rand_idx(gen);
 		pool.indices[2*i+1] = rand_idx(gen);
 		pool.v_norms[2*i+0] = rand_val(gen);
@@ -50,16 +50,16 @@ void load_data_txt(mem_pool pool, std::string data_name){
 	getline(ifs, line);
 	// cout << line << '\n';
 
-	int n = 0;
+	int32 n = 0;
     while (getline(ifs, line) && n<pool.B) {
         vector<string> strvec = split(line, ',');
 		pool.indices[2*n+0] = (int32)stoi(strvec.at(0)); // x
 		pool.indices[2*n+1] = (int32)stoi(strvec.at(1)); // y
 		pool.v_norms[2*n+0] = stod(strvec.at(4)); // vx_perp
 		pool.v_norms[2*n+1] = stod(strvec.at(5)); // vy_perp
-		pool.timestamps[n] 	= stoi(strvec.at(2)); // t
+		pool.timestamps[n] 	= (int32)stoi(strvec.at(2)); // t
+		// printf("timestamps %d %d\n", n, pool.timestamps[n] );
 		n++;
-		// printf("timestamps %d %d\n", n, stoi(strvec.at(2)));
     }
 	// printf("done..\n");
     return;
@@ -117,11 +117,11 @@ void debug_output(mem_pool pool){
 	printf("done..\n");
 }
 
-void save_data(mem_pool pool, int seq_id, int index, int c_time){
+void save_data(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
 	double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
 	memset(fimg, 0.0, 2*pool.W*pool.H*sizeof(double));
 
-	int time;
+	int32 time;
 	#pragma omp parallel for
 	for(int32 y=0; y<pool.H; y++)
 		for(int32 x=0;x<pool.W;x++){

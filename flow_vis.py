@@ -131,6 +131,8 @@ def flow_to_image(flow_uv, clip_flow=None, convert_to_bgr=False):
     epsilon = 1e-5
     u = u / (rad_max + epsilon)
     v = v / (rad_max + epsilon)
+    u = np.clip(u, -1.0, +1.0)
+    v = np.clip(v, -1.0, +1.0)
     return flow_uv_to_colors(u, v, convert_to_bgr)
 
 def save_flo(flow_uv, fname, clip_flow=None, convert_to_bgr=False, nan_mask=None): 

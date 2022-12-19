@@ -8,13 +8,13 @@
 #include <unistd.h>
 #include "tegbp.hpp"
 
-int main(int argc, char **argv)
+int32 main(int32 argc, char **argv)
 {
 	// Setup OMP
-	int num_thread 			= omp_get_max_threads();
-	int WINSIZE 		    = 1000;
-	int n_itr_show 			= 1;
-	std::string data_name = "bricks";
+	int32 num_thread 		= omp_get_max_threads();
+	int32 WINSIZE 		    = 1000;
+	int32 n_itr_save 		= 1;
+	std::string data_name 	= "bricks";
 
 	if (argc>1){
 		if (atoi(argv[1])>0){
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	}
 
 	if (argc>4){
-		n_itr_show = atoi(argv[4]);
+		n_itr_save = atoi(argv[4]);
 	}
 
 	printf("Start main dataset: %s WINSIZE %d\n", data_name.c_str(), WINSIZE);
@@ -49,10 +49,11 @@ int main(int argc, char **argv)
 
 	// Run the main image processing function
 	double ellapse 	= 0;
-	int b_ptr 		= 0;
-	int n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
-	int c_time 		= 0;
-	for (int itr=0; itr<n_itr; itr++){
+	int32 b_ptr 		= 0;
+	int32 n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
+	// n_itr = 100;
+	int32 c_time 		= 0;
+	for (int32 itr=0; itr<n_itr; itr++){
 		double start = omp_get_wtime();
 		printf("process_batch %d - %d\n",b_ptr, (b_ptr+WINSIZE));
 		// #pragma omp parallel
@@ -66,9 +67,9 @@ int main(int argc, char **argv)
 		b_ptr 	= b_ptr + (WINSIZE*1); 
 		ellapse = ellapse + (end-start);
 
-		if (n_itr_show>0 & itr%n_itr_show==0){
+		if (n_itr_save>0 & itr%n_itr_save==0){
 			save_data(pool, itr, 0, c_time); // estimated flow
-			save_data(pool, itr, 1, c_time); // normal flow
+			// save_data(pool, itr, 1, c_time); // normal flow
 		}
 	}
 	printf("Work took %f seconds for %d K events (num_thread: %d) %5.3f KEPS\n",ellapse, pool.B/1000, num_thread, (pool.B/1000)/ellapse);
