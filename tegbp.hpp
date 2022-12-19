@@ -37,8 +37,8 @@ struct mem_pool{
     double * v_norms;
     int16 *indices;
     int *timestamps;
-    int H;
-    int W;
+    int16 H;
+    int16 W;
     int B;
     std::string data_name;
     int WINSIZE;
@@ -49,6 +49,8 @@ void debug_output(mem_pool pool);
 void save_data(mem_pool pool, int seq_id, int index, int c_time);
 void process_batch(mem_pool pool, int b_ptr);
 mem_pool initialize(mem_pool pool);
-int sub2ind(int16 x, int16 y, int node_index, int dir, int H, int W);
+int sub2ind(int16 x, int16 y, int node_index, int dir, int16 H, int16 W);
+int sub2ind_10(int16 x, int16 y, int16 H, int16 W);
+int sub2ind_00(int16 x, int16 y, int16 H, int16 W);
 // void init_sae(mem_pool pool);
 #endif

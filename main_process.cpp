@@ -52,6 +52,7 @@ int main(int argc, char **argv)
 		// #pragma omp parallel
 		// {
 		process_batch(pool, b_ptr);
+		// }
 		c_time = pool.timestamps[b_ptr+WINSIZE];
 
 
