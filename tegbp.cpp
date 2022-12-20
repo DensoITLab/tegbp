@@ -17,35 +17,12 @@
 // #pragma omp barrier
 // #pragma omp for nowait
 
-int32 dirc[2][N_EDGE]; // NEIGHBOR*N_SCALE
+int32 dirc[2][N_EDGE];
 int32 dirc_idx[N_EDGE];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
-// #pragma omp declare simd
-// int32 sub2ind_sae(int32 x, int32 y, int32 dir, int32 H, int32 W){
-// 	return (x+dirc[0][dir] + W*(y+dirc[1][dir]));
-// }
-// self:0  obs:1  from up:2 from down:3  from left:4: from down:5
-int32 sub2ind_nod_dir(int32 x, int32 y, int32 dir, int32 H, int32 W){
-	return NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir])) + (dirc_idx[dir]+IDX_NOD)*STS_DIM;
-}
-// int32 sub2ind_slf_dir(int32 x, int32 y, int32 node_index, int32 dir, int32 H, int32 W){
-// 	return  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir]));
-// }
-int32 sub2ind_obs_dir(int32 x, int32 y, int32 dir, int32 H, int32 W){
-	return  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir])) + STS_DIM;
-}
-// int32 sub2ind_nod(int32 x, int32 y, int32 node_index, int32 H, int32 W){
-// 	return NOD_DIM*(x + W*y) + (node_index+IDX_NOD)*STS_DIM;
-// }
-// int32 sub2ind_obs(int32 x, int32 y, int32 H, int32 W){
-// 	return NOD_DIM*(x + W*y) + STS_DIM;
-// }
-// int32 sub2ind_slf(int32 x, int32 y, int32 H, int32 W){
-// 	return NOD_DIM*(x + W*y);
-// }
 #pragma omp declare simd
-int32 sub2ind_base(int32 x, int32 y, int32 H, int32 W){
+int32 sub2ind(int32 x, int32 y, int32 H, int32 W){
 	return NOD_DIM*(x + W*y);
 }
 
@@ -85,9 +62,8 @@ V6D update_state(double * node, bool* active, int32 ind_slf,  int32 ind_obs,  in
 {
 	V6D belief;
 	V6D *msg_from;
-	get_state(node, ind_obs, &belief); // ind of obs node, node_index, dir 
+	get_state(node, ind_obs, &belief); // ind of obs node
 
-	// sub2ind_nod
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
 			msg_from = get_state_ptr(node, dir*STS_DIM+ind_nod);
@@ -182,7 +158,7 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
 	}
-	int32 ind_slf 	= sub2ind_base(x, y,  H, W); //IDX_SLF=0
+	int32 ind_slf 	= sub2ind(x, y,  H, W); //IDX_SLF=0
 	int32 ind_obs 	= ind_slf+STS_DIM;
 	int32 ind_nod 	= ind_obs+STS_DIM;
 
@@ -195,21 +171,21 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 
     // variable message
 	msg_v = belief;
-	// int32 ind_nod =  sub2ind_nod(x, y, 0, H, W);
     for(int32 dir=0; dir<N_EDGE; dir++){ 				// connected edge
-        if (active[dir]){           				// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
-            // ind = sub2ind_nod(x, y, dir, H, W);     // [dir, 0]
+        if (active[dir]){           					// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
             come = get_state_ptr(node, dir*STS_DIM+ind_nod);
             msg_v = belief - *come;
-			// printf("send_message_Nconnect active\n");
         }
         // get state of destination node
-        node_to 	= get_state_ptr(node, sub2ind_obs_dir(x, y, dir, H, W));
+		int32 ind_obs_ = sub2ind(x + dirc[0][dir], y + dirc[1][dir], H, W) + STS_DIM;
+		int32 ind_nod_ 	= ind_obs_+STS_DIM;
+
+        node_to 	= get_state_ptr(node, ind_obs_);
         state(2)    = (*node_to)(0);
         state(3)    = (*node_to)(1);
         // prior factor message
         msg_p       = smoothness_factor(msg_v, state);
-        set_state(node, sub2ind_nod_dir(x, y, dir, H, W), &msg_p);
+        set_state(node, ind_nod_ + dirc_idx[dir]*STS_DIM, &msg_p);
     }
 }
 
@@ -223,7 +199,7 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
 	}
-	int32 ind_slf = sub2ind_base(x, y,  H, W); //IDX_SLF=0
+	int32 ind_slf = sub2ind(x, y,  H, W); //IDX_SLF=0
 	int32 ind_obs = ind_slf+STS_DIM;
 	int32 ind_nod = ind_obs+STS_DIM;
 
@@ -233,11 +209,11 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	// neighor node
     for(int32 dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
-			// printf("message_passing_event\n");
-            int32 x_ = x + dirc[0][dir]; int32 y_ = y + dirc[1][dir];
-            send_message_Nconnect(node, sae, x_, y_, t, H, W);
+        	send_message_Nconnect(node, sae, x + dirc[0][dir], y + dirc[1][dir], t, H, W);
         }
     }
+
+	// self node
 	update_state(node, active, ind_slf, ind_obs, ind_nod);
 	return;
 }
@@ -270,7 +246,7 @@ void process_batch(mem_pool pool, int32 b_ptr)
 		// printf("(%3.2f, %3.2f) \n",obs_msg(0), obs_msg(1));
 
 		// Set the observation
-		set_state(pool.node, sub2ind_base(x, y, pool.H, pool.W) +STS_DIM, &obs_msg); //IDX_OBS =1
+		set_state(pool.node, sub2ind(x, y, pool.H, pool.W) +STS_DIM, &obs_msg); //IDX_OBS =1
 
 		// Core of message passing
 		message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);
