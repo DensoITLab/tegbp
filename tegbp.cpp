@@ -29,20 +29,23 @@ int32 dirc_idx[N_EDGE];
 int32 sub2ind_nod_dir(int32 x, int32 y, int32 dir, int32 H, int32 W){
 	return NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir])) + (dirc_idx[dir]+IDX_NOD)*STS_DIM;
 }
-int32 sub2ind_slf_dir(int32 x, int32 y, int32 node_index, int32 dir, int32 H, int32 W){
-	return  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir]));
-}
+// int32 sub2ind_slf_dir(int32 x, int32 y, int32 node_index, int32 dir, int32 H, int32 W){
+// 	return  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir]));
+// }
 int32 sub2ind_obs_dir(int32 x, int32 y, int32 dir, int32 H, int32 W){
 	return  NOD_DIM*(x+dirc[0][dir] + W*(y+dirc[1][dir])) + STS_DIM;
 }
+// int32 sub2ind_nod(int32 x, int32 y, int32 node_index, int32 H, int32 W){
+// 	return NOD_DIM*(x + W*y) + (node_index+IDX_NOD)*STS_DIM;
+// }
+// int32 sub2ind_obs(int32 x, int32 y, int32 H, int32 W){
+// 	return NOD_DIM*(x + W*y) + STS_DIM;
+// }
+// int32 sub2ind_slf(int32 x, int32 y, int32 H, int32 W){
+// 	return NOD_DIM*(x + W*y);
+// }
 #pragma omp declare simd
-int32 sub2ind_nod(int32 x, int32 y, int32 node_index, int32 H, int32 W){
-	return NOD_DIM*(x + W*y) + (node_index+IDX_NOD)*STS_DIM;
-}
-int32 sub2ind_obs(int32 x, int32 y, int32 H, int32 W){
-	return NOD_DIM*(x + W*y) + STS_DIM;
-}
-int32 sub2ind_slf(int32 x, int32 y, int32 H, int32 W){
+int32 sub2ind_base(int32 x, int32 y, int32 H, int32 W){
 	return NOD_DIM*(x + W*y);
 }
 
@@ -78,13 +81,10 @@ V2D belief_vec_to_mu(V6D belief)
 	return (Lam_0+C).inverse() * eta;
 }
 
-V6D update_state(double * node, bool* active, int32 x, int32 y, int32 t,  int32 H, int32 W)
+V6D update_state(double * node, bool* active, int32 ind_slf,  int32 ind_obs,  int32 ind_nod)
 {
 	V6D belief;
 	V6D *msg_from;
-	int32 in_slf = sub2ind_slf(x, y,  H, W); //IDX_SLF=0
-	int32 ind_obs = in_slf + STS_DIM;
-	int32 ind_nod = ind_obs + STS_DIM;
 	get_state(node, ind_obs, &belief); // ind of obs node, node_index, dir 
 
 	// sub2ind_nod
@@ -99,9 +99,9 @@ V6D update_state(double * node, bool* active, int32 x, int32 y, int32 t,  int32 
 
     // Set updated state
     V6D *self;
-    self = get_state_ptr(node, in_slf);
+    self = get_state_ptr(node, ind_slf);
 	(*self).head(2)=mu;
-	set_state(node, in_slf, self);
+	set_state(node, ind_slf, self);
 	return belief;
 }
 
@@ -182,12 +182,13 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
 	}
+	int32 ind_slf 	= sub2ind_base(x, y,  H, W); //IDX_SLF=0
+	int32 ind_obs 	= ind_slf+STS_DIM;
+	int32 ind_nod 	= ind_obs+STS_DIM;
 
-	V6D belief = update_state(node, active, x, y, t, H, W);
+	V6D belief = update_state(node, active, ind_slf, ind_obs, ind_nod);
 
     // get state of self node
-    int32 ind_slf = sub2ind_slf(x, y, H, W); // ind of self node
-	int32 ind_nod =  ind_slf+STS_DIM+STS_DIM;
     slf = get_state_ptr(node, ind_slf);
     state(0) = (*slf)(0);
     state(1) = (*slf)(1);
@@ -222,6 +223,9 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
 	}
+	int32 ind_slf = sub2ind_base(x, y,  H, W); //IDX_SLF=0
+	int32 ind_obs = ind_slf+STS_DIM;
+	int32 ind_nod = ind_obs+STS_DIM;
 
 	// self node
     send_message_Nconnect(node, sae, x, y, t, H, W);
@@ -234,7 +238,7 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
             send_message_Nconnect(node, sae, x_, y_, t, H, W);
         }
     }
-	update_state(node, active, x, y, t, H, W);
+	update_state(node, active, ind_slf, ind_obs, ind_nod);
 	return;
 }
 
@@ -266,7 +270,7 @@ void process_batch(mem_pool pool, int32 b_ptr)
 		// printf("(%3.2f, %3.2f) \n",obs_msg(0), obs_msg(1));
 
 		// Set the observation
-		set_state(pool.node, sub2ind_obs(x, y, pool.H, pool.W), &obs_msg); //IDX_OBS =1
+		set_state(pool.node, sub2ind_base(x, y, pool.H, pool.W) +STS_DIM, &obs_msg); //IDX_OBS =1
 
 		// Core of message passing
 		message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);

@@ -111,7 +111,7 @@ void debug_output(mem_pool pool){
 	for(int32 y=0;y<pool.H/6;y++){
 		printf("\n");
 		for(int32 x=0;x<pool.W/6;x++){
-			printf("%04.1f|", pool.node[sub2ind_slf(x, y,  pool.H, pool.W)]);
+			printf("%04.1f|", pool.node[sub2ind_base(x, y,  pool.H, pool.W)]);
 		}
 	}
 	printf("done..\n");
@@ -128,11 +128,11 @@ void save_data(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
 			time = pool.sae[(pool.W*y + x)];
 			if ((c_time-time)<DT_ACT){
 				if (index==0){
-					fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind_slf(x, y, pool.H, pool.W)+0];
-					fimg[2*(pool.W*y + x)+1] 	= pool.node[sub2ind_slf(x, y, pool.H, pool.W)+1];
+					fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind_base(x, y, pool.H, pool.W)+0];
+					fimg[2*(pool.W*y + x)+1] 	= pool.node[sub2ind_base(x, y, pool.H, pool.W)+1];
 				}else{
-					fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind_obs(x, y, pool.H, pool.W)+0];
-					fimg[2*(pool.W*y + x)+1] 	= pool.node[sub2ind_obs(x, y, pool.H, pool.W)+1];
+					fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind_base(x, y, pool.H, pool.W)+0+STS_DIM];
+					fimg[2*(pool.W*y + x)+1] 	= pool.node[sub2ind_base(x, y, pool.H, pool.W)+1+STS_DIM];
 				}
 
 			}
