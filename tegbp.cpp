@@ -82,12 +82,15 @@ V6D update_state(double * node, bool* active, int32 x, int32 y, int32 t,  int32 
 {
 	V6D belief;
 	V6D *msg_from;
-	int32 ind = sub2ind_obs(x, y,  H, W); //IDX_OBS=1
-	get_state(node, ind, &belief); // ind of obs node, node_index, dir 
+	int32 in_slf = sub2ind_slf(x, y,  H, W); //IDX_SLF=0
+	int32 ind_obs = in_slf + STS_DIM;
+	int32 ind_nod = ind_obs + STS_DIM;
+	get_state(node, ind_obs, &belief); // ind of obs node, node_index, dir 
 
+	// sub2ind_nod
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
-			msg_from = get_state_ptr(node, sub2ind_nod(x, y, dir, H, W));
+			msg_from = get_state_ptr(node, dir*STS_DIM+ind_nod);
 			belief = belief + *msg_from;
 		}
 	}
@@ -96,10 +99,9 @@ V6D update_state(double * node, bool* active, int32 x, int32 y, int32 t,  int32 
 
     // Set updated state
     V6D *self;
-    ind = sub2ind_slf(x, y, H, W); // ind of self node
-    self = get_state_ptr(node, ind);
+    self = get_state_ptr(node, in_slf);
 	(*self).head(2)=mu;
-	set_state(node, ind, self);
+	set_state(node, in_slf, self);
 	return belief;
 }
 
@@ -168,37 +170,45 @@ V6D smoothness_factor(V6D msg_v, V4D state)
 	return msg;
 }
 
-void send_message_Nconnect(double* node, bool* active, int32 x, int32 y, int32 t, int32 H, int32 W, V6D belief)
+void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, int32 H, int32 W)
 {
     V4D state;
-    V6D *self, *come, *node_to;
+    V6D *slf, *come, *node_to;
     V6D msg_v, msg_p;
-    int32 ind, ind_to, ind_sae;
+    // int32 ind, ind_to;
+
+	// For SIMD 
+	bool active[N_EDGE];
+	for(int32 dir=0; dir<N_EDGE; dir++){
+		active[dir] = isActive(x, y, dir, H, W, t, sae);
+	}
+
+	V6D belief = update_state(node, active, x, y, t, H, W);
 
     // get state of self node
-    int32 ind_self = sub2ind_slf(x, y, H, W); // ind of self node
-    self = get_state_ptr(node, ind_self);
-    state(0) = (*self)(0);
-    state(1) = (*self)(1);
+    int32 ind_slf = sub2ind_slf(x, y, H, W); // ind of self node
+	int32 ind_nod =  ind_slf+STS_DIM+STS_DIM;
+    slf = get_state_ptr(node, ind_slf);
+    state(0) = (*slf)(0);
+    state(1) = (*slf)(1);
 
     // variable message
 	msg_v = belief;
+	// int32 ind_nod =  sub2ind_nod(x, y, 0, H, W);
     for(int32 dir=0; dir<N_EDGE; dir++){ 				// connected edge
         if (active[dir]){           				// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
-            ind = sub2ind_nod(x, y, dir, H, W);     // [dir, 0]
-            come = get_state_ptr(node, ind);
+            // ind = sub2ind_nod(x, y, dir, H, W);     // [dir, 0]
+            come = get_state_ptr(node, dir*STS_DIM+ind_nod);
             msg_v = belief - *come;
 			// printf("send_message_Nconnect active\n");
         }
         // get state of destination node
-        ind_to      = sub2ind_obs_dir(x, y, dir, H, W); 		// [0, dir] IDX_OBS=1
-        node_to 	= get_state_ptr(node, ind_to);
+        node_to 	= get_state_ptr(node, sub2ind_obs_dir(x, y, dir, H, W));
         state(2)    = (*node_to)(0);
         state(3)    = (*node_to)(1);
         // prior factor message
         msg_p       = smoothness_factor(msg_v, state);
-        ind         = sub2ind_nod_dir(x, y, dir, H, W); 	// [?, ?]
-        set_state(node, ind, &msg_p);
+        set_state(node, sub2ind_nod_dir(x, y, dir, H, W), &msg_p);
     }
 }
 
@@ -209,26 +219,19 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	
 	// For SIMD 
 	bool active[N_EDGE];
-	bool active_[N_EDGE][N_EDGE];
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
-		int32 x_ = x + dirc[0][dir]; int32 y_ = y + dirc[1][dir];
-		for(int32 dir_=0; dir_<N_EDGE; dir_++){
-			active_[dir][dir_] = isActive(x_, y_, dir_, H, W, t, sae);
-		}
 	}
 
 	// self node
-    belief = update_state(node, active, x, y, t, H, W);
-    send_message_Nconnect(node, active, x, y, t, H, W, belief);
+    send_message_Nconnect(node, sae, x, y, t, H, W);
 	
 	// neighor node
     for(int32 dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
 			// printf("message_passing_event\n");
             int32 x_ = x + dirc[0][dir]; int32 y_ = y + dirc[1][dir];
-            belief = update_state(node, active_[dir], x_, y_, t, H, W);
-            send_message_Nconnect(node, active_[dir], x_, y_, t, H, W, belief);
+            send_message_Nconnect(node, sae, x_, y_, t, H, W);
         }
     }
 	update_state(node, active, x, y, t, H, W);
