@@ -150,10 +150,11 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 {
     V4D state;
     V6D *slf, *come, *node_to;
-    V6D msg_v, msg_p;
+    V6D msg_v_all[N_EDGE], msg_p;
 
 	// For SIMD 
 	bool active[N_EDGE];
+	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
 	}
@@ -169,22 +170,32 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
     state(1) = (*slf)(1);
 
     // variable message
-	msg_v = belief;
+	// msg_v = belief;
+	
+	// For SIMD 
+	int32 ind_obs_all_ [N_EDGE];
+	#pragma simd
+	for(int32 dir=0; dir<N_EDGE; dir++){ 	
+		ind_obs_all_[dir] = sub2ind(x + dirc[0][dir], y + dirc[1][dir], H, W) + STS_DIM;
+	}
+
     for(int32 dir=0; dir<N_EDGE; dir++){ 				// connected edge
         if (active[dir]){           					// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
             come = get_state_ptr(node, dir*STS_DIM+ind_nod);
-            msg_v = belief - *come;
+            msg_v_all[dir] = belief - *come;
+		}else{
+            msg_v_all[dir] = belief;
         }
+	}
+	#pragma simd
+	for(int32 dir=0; dir<N_EDGE; dir++){ 				// connected edge
         // get state of destination node
-		int32 ind_obs_ = sub2ind(x + dirc[0][dir], y + dirc[1][dir], H, W) + STS_DIM;
-		int32 ind_nod_ 	= ind_obs_+STS_DIM;
-
-        node_to 	= get_state_ptr(node, ind_obs_);
+        node_to 	= get_state_ptr(node, ind_obs_all_[dir]);
         state(2)    = (*node_to)(0);
         state(3)    = (*node_to)(1);
         // prior factor message
-        msg_p       = smoothness_factor(msg_v, state);
-        set_state(node, ind_nod_ + dirc_idx[dir]*STS_DIM, &msg_p);
+        msg_p       = smoothness_factor(msg_v_all[dir], state);
+        set_state(node, ind_obs_all_[dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
     }
 }
 
@@ -195,6 +206,7 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	
 	// For SIMD 
 	bool active[N_EDGE];
+	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
 	}
