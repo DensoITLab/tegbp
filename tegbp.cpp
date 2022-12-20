@@ -151,7 +151,6 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
     V4D state;
     V6D *slf, *come, *node_to;
     V6D msg_v, msg_p;
-    // int32 ind, ind_to;
 
 	// For SIMD 
 	bool active[N_EDGE];
@@ -221,19 +220,12 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
 
 void process_batch(mem_pool pool, int32 b_ptr)
 {
-	// update SAE
-	// #pragma omp parallel for
-    // for(int32 i=b_ptr; i<(b_ptr+pool.WINSIZE); i++){
-	// 	int32 x = pool.indices[2*i+0]; int32 y = pool.indices[2*i+1]; 
-    //     int32 t = pool.timestamps[i];
-	// 	pool.sae[(pool.W*y + x)] = t;
-	// }
-	#pragma omp parallel for
-	// #pragma parallel for
+	// #pragma omp for nowait
+	#pragma omp for nowait schedule(dynamic)
+	// #pragma omp parallel for schedule(dynamic)
     for(int32 i=b_ptr; i<(b_ptr+pool.WINSIZE); i++){
         // double count    = 0;
         // double tot      = 0;
-
 		V2D v_perp = (V2D() << pool.v_norms[2*i+0], pool.v_norms[2*i+1]).finished();
 		int32 x = pool.indices[2*i+0]; int32 y = pool.indices[2*i+1]; 
         int32 t = pool.timestamps[i];
@@ -251,7 +243,6 @@ void process_batch(mem_pool pool, int32 b_ptr)
 		// Core of message passing
 		message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);
 	}
-	// }
 return;
 }
 

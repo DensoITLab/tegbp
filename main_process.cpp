@@ -56,10 +56,10 @@ int32 main(int32 argc, char **argv)
 	for (int32 itr=0; itr<n_itr; itr++){
 		double start = omp_get_wtime();
 		printf("process_batch %d - %d\n",b_ptr, (b_ptr+WINSIZE));
-		// #pragma omp parallel
-		// {
+		#pragma omp parallel
+		{
 		process_batch(pool, b_ptr);
-		// }
+		}
 		c_time = pool.timestamps[b_ptr+WINSIZE];
 		// }
  		double end = omp_get_wtime();
