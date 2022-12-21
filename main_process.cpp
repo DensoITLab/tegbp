@@ -51,7 +51,13 @@ int32 main(int32 argc, char **argv)
 	double ellapse 	= 0;
 	int32 b_ptr 		= 0;
 	int32 n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
-	// n_itr = 100;
+	int32 increment 	= 1;
+	if (pool.WINSIZE>=pool.B){
+		// For debug
+		n_itr = 100;
+		increment=0;
+	}
+
 	int32 c_time 		= 0;
 	for (int32 itr=0; itr<n_itr; itr++){
 		double start = omp_get_wtime();
@@ -61,10 +67,9 @@ int32 main(int32 argc, char **argv)
 		process_batch(pool, b_ptr);
 		}
 		c_time = pool.timestamps[b_ptr+WINSIZE];
-		// }
  		double end = omp_get_wtime();
 
-		b_ptr 	= b_ptr + (WINSIZE*1); 
+		b_ptr 	= b_ptr + (WINSIZE*increment); 
 		ellapse = ellapse + (end-start);
 
 		if (n_itr_save>0 & itr%n_itr_save==0){

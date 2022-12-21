@@ -33,19 +33,24 @@ bool isActive(int32 x, int32 y, int32 dir, int32 H, int32 W, int32 t, int32* sae
 }
 
 // Geter and Setter
-void get_state(double * node, int32 ind, V6D* data)
-{
-	memcpy(data, &node[ind], sizeof(V6D));
-	return;
-}
-V6D* get_state_ptr(double * node, int32 ind)
+V6D* get_state(double * node, int32 ind)
 {
 	return (V6D*)&node[ind];
 }
-
+V2D* get_mu(double * node, int32 ind)
+{
+	return (V2D*)&node[ind];
+}
 void set_state(double * node, int32 ind, V6D* data)
 {
+	// (V6D)node[ind] = *data;
 	memcpy(&node[ind], data, sizeof(V6D));
+	return;
+}
+void set_mu(double * node, int32 ind, V2D* data)
+{
+	// (V2D)node[ind] = *data;
+	memcpy(&node[ind], data, sizeof(V2D));
 	return;
 }
 
@@ -60,24 +65,20 @@ V2D belief_vec_to_mu(V6D belief)
 
 V6D update_state(double * node, bool* active, int32 ind_slf,  int32 ind_obs,  int32 ind_nod)
 {
-	V6D belief;
-	V6D *msg_from;
-	get_state(node, ind_obs, &belief); // ind of obs node
+	V6D belief = *get_state(node, ind_obs);
+	// V6D belief;
+	// get_state(node, ind_obs, &belief); // ind of obs node
 
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
-			msg_from = get_state_ptr(node, ind_nod + dir*STS_DIM);
-			belief = belief + *msg_from;
+			belief = belief + *get_state(node, ind_nod + dir*STS_DIM);
 		}
 	}
 
 	V2D mu = belief_vec_to_mu(belief);
 
     // Set updated state
-    V6D *self;
-    self = get_state_ptr(node, ind_slf);
-	(*self).head(2)=mu;
-	set_state(node, ind_slf, self);
+    set_mu(node, ind_slf, &mu);
 	return belief;
 }
 
@@ -107,8 +108,8 @@ double huber_scale_v4d(V4D state, M4D Lam){
 
 V6D calc_data_term(V2D v_perp)
 {
-	double inv_sigma2_obs_r	=  1.0/9.0;
-	double inv_sigma2_obs_t =  1.0/100.0;
+	double inv_sigma2_obs_r	= 1.0/9.0;
+	double inv_sigma2_obs_t = 1.0/100.0;
 	double theta   		    = std::atan(v_perp(1) / v_perp(0));
 
 	M2D R = (M2D() << std::cos(theta), -std::sin(theta), std::sin(theta), std::cos(theta)).finished();
@@ -149,7 +150,7 @@ V6D smoothness_factor(V6D msg_v, V4D state)
 void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, int32 H, int32 W)
 {
     V4D state;
-    V6D *slf, *src, *dst;
+    // V6D *slf, *src, *dst;
     V6D msg_v_all[N_EDGE];
 	V6D msg_p;
 	int32 ind_obs_all_[N_EDGE];
@@ -167,10 +168,9 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	V6D belief = update_state(node, active, ind_slf, ind_obs, ind_nod);
 
     // get state of self node
-    slf = get_state_ptr(node, ind_slf);
-    state(0) = (*slf)(0);
-    state(1) = (*slf)(1);
-	
+    V2D *mu = get_mu(node, ind_slf);
+	state.head(2) <<*mu;
+
 	// For SIMD 
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){ 	
@@ -179,17 +179,16 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 
     for(int32 dir=0; dir<N_EDGE; dir++){
         if (active[dir]){ 	// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
-            src = get_state_ptr(node, dir*STS_DIM+ind_nod);
-            msg_v_all[dir] = belief - *src;
+            msg_v_all[dir] = belief - *get_state(node, dir*STS_DIM+ind_nod);
 		}else{
             msg_v_all[dir] = belief;
         }
 	}
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
-        dst 		= get_state_ptr(node, ind_obs_all_[dir]); //dst state
-        state(2)    = (*dst)(0);
-        state(3)    = (*dst)(1);
+		V2D *mu_ = get_mu(node, ind_obs_all_[dir]);  //dst state
+        // dst 		= get_state(node, ind_obs_all_[dir]);
+		state.tail(2) << *mu_;
         msg_p       = smoothness_factor(msg_v_all[dir], state); // prior factor message
         set_state(node, ind_obs_all_[dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
     }

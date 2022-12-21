@@ -33,7 +33,8 @@ make
 ## Run
 ```
 ./process #thread #events
-./process 64 100000
+./process =1 "indoor_flying2" -1 -1
+./process -1 "bricks" 15000 // debug
 ```
 
 ## Visualization
