@@ -4,8 +4,8 @@ Code for CVPR submmision 4712.
 - [Overleaf](https://www.overleaf.com/project/634f900abe6816625b0e860e)
 - [PDF](https://github.com/DensoITLab/tegbp/blob/master/material/CVPR2023_4712.pdf)
 
-[normal (input)](https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png "normal (input)")
-[full (output)](https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png "full (output)")
+![normal (input)](https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png "normal (input)")
+![full (output)](https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png "full (output)")
 <!-- <img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png" alt="normal flow"  title="normal flow"> -->
 <!-- <img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png" alt="full flow"  title="full flow"> -->
 
