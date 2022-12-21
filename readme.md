@@ -8,6 +8,10 @@ Code for CVPR submmision 4712.
 <img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png" alt="normal flow"  title="normal flow">
 <img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png" alt="full flow"  title="full flow">
 
+
+https://user-images.githubusercontent.com/270088/208857729-874e8b45-a718-4e47-93a3-04094538ba18.mov
+
+
 ## Setup dependency 
 ```
 sudo apt install libeigen3-dev
