@@ -43,14 +43,16 @@ V2D* get_mu(double * node, int32 ind)
 }
 void set_state(double * node, int32 ind, V6D* data)
 {
-	// (V6D)node[ind] = *data;
-	memcpy(&node[ind], data, sizeof(V6D));
+	V6D* ptr = (V6D*)&node[ind];
+	*ptr = *data;
+	// memcpy(&node[ind], data, sizeof(V6D));
 	return;
 }
 void set_mu(double * node, int32 ind, V2D* data)
 {
-	// (V2D)node[ind] = *data;
-	memcpy(&node[ind], data, sizeof(V2D));
+	V2D* ptr = (V2D*)&node[ind];
+	*ptr = *data;
+	// memcpy(&node[ind], data, sizeof(V2D));
 	return;
 }
 
