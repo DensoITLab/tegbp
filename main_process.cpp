@@ -59,24 +59,24 @@ int32 main(int32 argc, char **argv)
 	}
 
 	int32 c_time 		= 0;
+	double start = omp_get_wtime();
 	for (int32 itr=0; itr<n_itr; itr++){
-		double start = omp_get_wtime();
 		printf("process_batch %d - %d\n",b_ptr, (b_ptr+WINSIZE));
 		#pragma omp parallel
 		{
 		process_batch(pool, b_ptr);
 		}
 		c_time = pool.timestamps[b_ptr+WINSIZE];
- 		double end = omp_get_wtime();
 
 		b_ptr 	= b_ptr + (WINSIZE*increment); 
-		ellapse = ellapse + (end-start);
 
 		if (n_itr_save>0 & itr%n_itr_save==0){
 			save_data(pool, itr, 0, c_time); // estimated flow
 			// save_data(pool, itr, 1, c_time); // normal flow
 		}
 	}
+	double end = omp_get_wtime();
+	ellapse = ellapse + (end-start);
 	printf("Work took %f seconds for %d K events (num_thread: %d) %5.3f KEPS\n",ellapse, pool.B/1000, num_thread, (pool.B/1000)/ellapse);
 
 	// Visualize results

@@ -33,14 +33,17 @@ bool isActive(int32 x, int32 y, int32 dir, int32 H, int32 W, int32 t, int32* sae
 }
 
 // Geter and Setter
+#pragma omp declare simd
 V6D* get_state(double * node, int32 ind)
 {
 	return (V6D*)&node[ind];
 }
+#pragma omp declare simd
 V2D* get_mu(double * node, int32 ind)
 {
 	return (V2D*)&node[ind];
 }
+#pragma omp declare simd
 void set_state(double * node, int32 ind, V6D* data)
 {
 	V6D* ptr = (V6D*)&node[ind];
@@ -48,6 +51,7 @@ void set_state(double * node, int32 ind, V6D* data)
 	// memcpy(&node[ind], data, sizeof(V6D));
 	return;
 }
+#pragma omp declare simd
 void set_mu(double * node, int32 ind, V2D* data)
 {
 	V2D* ptr = (V2D*)&node[ind];
@@ -55,7 +59,6 @@ void set_mu(double * node, int32 ind, V2D* data)
 	// memcpy(&node[ind], data, sizeof(V2D));
 	return;
 }
-
 V2D belief_vec_to_mu(V6D belief)
 {
 	double cond = 0.00001;
@@ -179,6 +182,7 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 		ind_obs_all_[dir] = sub2ind(x + dirc[0][dir], y + dirc[1][dir], H, W) + STS_DIM;
 	}
 
+	#pragma simd
     for(int32 dir=0; dir<N_EDGE; dir++){
         if (active[dir]){ 	// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
             msg_v_all[dir] = belief - *get_state(node, dir*STS_DIM+ind_nod);
@@ -189,7 +193,6 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		V2D *mu_ = get_mu(node, ind_obs_all_[dir]);  //dst state
-        // dst 		= get_state(node, ind_obs_all_[dir]);
 		state.tail(2) << *mu_;
         msg_p       = smoothness_factor(msg_v_all[dir], state); // prior factor message
         set_state(node, ind_obs_all_[dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
@@ -230,11 +233,9 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
 void process_batch(mem_pool pool, int32 b_ptr)
 {
 	// #pragma omp for nowait
-	#pragma omp for nowait schedule(dynamic)
-	// #pragma omp parallel for schedule(dynamic)
+	// #pragma omp for simd nowait
+	#pragma omp for simd nowait schedule(dynamic)
     for(int32 i=b_ptr; i<(b_ptr+pool.WINSIZE); i++){
-        // double count    = 0;
-        // double tot      = 0;
 		V2D v_perp = (V2D() << pool.v_norms[2*i+0], pool.v_norms[2*i+1]).finished();
 		int32 x = pool.indices[2*i+0]; int32 y = pool.indices[2*i+1]; 
         int32 t = pool.timestamps[i];
