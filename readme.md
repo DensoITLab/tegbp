@@ -67,3 +67,6 @@ Coder: Y.Sekikawa, J.Nagata
 - [OMP hello](https://curc.readthedocs.io/en/latest/programming/OpenMP-C.html#id2)
 - [OMP tutorial](https://msu-cmse-courses.github.io/cmse401-S21-student/assignments/0225-HW2_OMP.html)
 - [OMP youtube](https://www.youtube.com/playlist?list=PLLX-Q6B8xqZ8n8bwjGdzBJ25X2utwnoEG)
+- [openeb](https://github.com/prophesee-ai/openeb)
+- [noise](https://docs.prophesee.ai/stable/metavision_sdk/modules/cv/samples/noise_filtering_cpp.html#chapter-sdk-cv-samples-noise-filtering-cpp)
+- [flow](https://docs.prophesee.ai/stable/metavision_sdk/modules/cv/samples/flow.html#chapter-sdk-cv-samples-flow)
