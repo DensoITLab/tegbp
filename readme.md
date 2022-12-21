@@ -9,7 +9,8 @@ Code for CVPR submmision 4712.
 <!-- <img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png" alt="normal flow"  title="normal flow"> -->
 <!-- <img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png" alt="full flow"  title="full flow"> -->
 
-[Indoor Flying](https://user-images.githubusercontent.com/270088/208857729-874e8b45-a718-4e47-93a3-04094538ba18.mov)
+[Indoor Flying](https://user-images.githubusercontent.com/270088/208863063-4f1a154f-bb05-4ff9-a4c0-67d1bd6a7e3f.mov)
+
 
 ## Setup dependency 
 ```
