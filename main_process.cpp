@@ -48,7 +48,7 @@ int32 main(int32 argc, char **argv)
 	// init_sae(pool); // should update sae in process batch
 
 	// Run the main image processing function
-	double ellapse 	= 0;
+	double ellapse 		= 0;
 	int32 b_ptr 		= 0;
 	int32 n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
 	// n_itr = 100;

@@ -90,6 +90,11 @@ mem_pool load_data(std::string data_name){
     	pool.H = 208;
     	pool.B = 15000;
 	}
+	if (data_name == "qr000"){
+		pool.W = 1312;
+    	pool.H = 752;
+    	pool.B = 1418870;
+	}
 	pool.data_name = data_name;
 	pool = initialize(pool);
 	// printf("initialize memory pool %d  %d  %d %d\n", pool.B, pool.H, pool.W, pool.timestamps);

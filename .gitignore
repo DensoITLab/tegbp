@@ -11,3 +11,5 @@ result
 matlab/
 matlab/*
 /matlab/*
+outer
+*.asv
