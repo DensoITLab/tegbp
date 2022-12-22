@@ -23,6 +23,8 @@ typedef int int32;
 typedef int8_t int8;
 typedef uint8_t uint8;
 
+typedef std::array<int32, 3> XYT;
+typedef std::array<int32, 4> XYTI;
 
 struct mem_pool{
     double *node;
