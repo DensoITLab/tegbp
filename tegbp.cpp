@@ -139,7 +139,7 @@ void set_observation(mem_pool* pool, V2D* v_perp, int32 ind_slf)
 
 V6D smoothness_factor(V6D* msg_v, V4D* state)
 {
-	constexpr double inv_sigma2_prior = 1.0 / 0.25;
+	constexpr double inv_sigma2_prior = 1.0 / 1.0;
 	M4D Lam = (M4D() << inv_sigma2_prior, 0.0, -inv_sigma2_prior, 0.0, 0.0, inv_sigma2_prior, 0.0, -inv_sigma2_prior, -inv_sigma2_prior, 0.0, inv_sigma2_prior, 0.0, 0.0, -inv_sigma2_prior, 0.0, inv_sigma2_prior).finished(); // [4 x 4]
     V4D eta = (V4D() << 0.0, 0.0, 0.0, 0.0).finished();
 	

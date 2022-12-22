@@ -90,10 +90,15 @@ mem_pool load_data(std::string data_name){
     	pool.H = 208;
     	pool.B = 15000;
 	}
-	if (data_name == "qr000"){
+	if (data_name == "qr000"){ // substr(0, 2) == "qr"
 		pool.W = 1312;
     	pool.H = 752;
     	pool.B = 1418870;
+	}
+	if (data_name == "qr001"){
+		pool.W = 1312;
+    	pool.H = 752;
+    	pool.B = 684966;
 	}
 	pool.data_name = data_name;
 	pool = initialize(pool);
