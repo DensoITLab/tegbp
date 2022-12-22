@@ -65,6 +65,9 @@ int32 main(int32 argc, char **argv)
 	double start = omp_get_wtime();
 	progressbar bar(n_itr);
 
+	std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+
 	for (int32 itr=0; itr<n_itr; itr++){
 		s_time = pool.timestamps[b_ptr];
 		e_time = pool.timestamps[b_ptr+WINSIZE];

@@ -22,15 +22,24 @@ int32 dirc_idx[N_EDGE];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
 #pragma omp declare simd
-int32 sub2ind(int32 x, int32 y, int32 H, int32 W){
-	return NOD_DIM*(x + W*y);
+inline int32 sub2ind_(int32 x, int32 y, int32 H, int32 W){
+	return (x + W*y);
 }
 
 #pragma omp declare simd
-bool isActive(int32 x, int32 y, int32 dir, int32 H, int32 W, int32 t, int32* sae)
-{
-	return ((t - sae[(x+dirc[0][dir] + W*(y+dirc[1][dir]))]) < DT_ACT);
+int32 sub2ind_nod(int32 x, int32 y, int32 H, int32 W){
+	return NOD_DIM*sub2ind_(x, y, H, W);
 }
+
+#pragma omp declare simd
+bool isActive(int32 ind, int32 t, int32* sae)
+{
+	return ((t - sae[ind]) < DT_ACT);
+}
+// bool isActive(int32 x, int32 y, int32 dir, int32 H, int32 W, int32 t, int32* sae)
+// {
+// 	return ((t - sae[(x+dirc[0][dir] + W*(y+dirc[1][dir]))]) < DT_ACT);
+// }
 
 // Geter and Setter
 #pragma omp declare simd
@@ -61,22 +70,19 @@ void set_mu(double * node, int32 ind, V2D* data)
 }
 V2D belief_vec_to_mu(V6D belief)
 {
-	double cond = 0.00001;
+	constexpr double cond = 0.00001;
 	M2D C = (M2D() << cond, 0.0, 0.0,  cond).finished();
 	V2D eta = belief.head(2);
 	Map<M2D,Eigen::Aligned> Lam_0(belief.tail(4).data());
 	return (Lam_0+C).inverse() * eta;
 }
 
-V6D update_state(double * node, bool* active, int32 ind_slf,  int32 ind_obs,  int32 ind_nod)
+V6D update_state(double * node, bool* active, int32 ind_slf)
 {
-	V6D belief = *get_state(node, ind_obs);
-	// V6D belief;
-	// get_state(node, ind_obs, &belief); // ind of obs node
-
+	V6D belief = *get_state(node, ind_slf+STS_DIM);
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
-			belief = belief + *get_state(node, ind_nod + dir*STS_DIM);
+			belief = belief + *get_state(node, ind_slf + (dir+2)*STS_DIM);
 		}
 	}
 
@@ -88,9 +94,9 @@ V6D update_state(double * node, bool* active, int32 ind_slf,  int32 ind_obs,  in
 }
 
 double huber_scale_(double M2){
-	double huber	= 1.0;
-	double huber2   = huber*huber;
-	double scale	= 1.0;
+	constexpr double huber	= 1.0;
+	constexpr double huber2   = huber*huber;
+	constexpr double scale	= 1.0;
 	if (huber > 0){
 		if (M2 < huber2){
 			double scale   = 1.0;
@@ -111,10 +117,10 @@ double huber_scale_v4d(V4D state, M4D Lam){
 	return huber_scale_(M2);
 }
 
-void set_observation(double* node, int32 x, int32 y, V2D v_perp, int32 H, int32 W)
+void set_observation(mem_pool pool, V2D v_perp, int32 ind_slf)
 {
-	double inv_sigma2_obs_r	= 1.0/9.0;
-	double inv_sigma2_obs_t = 1.0/100.0;
+	constexpr double inv_sigma2_obs_r	= 1.0/9.0;
+	constexpr double inv_sigma2_obs_t 	= 1.0/100.0;
 	double theta   		    = std::atan(v_perp(1) / v_perp(0));
 
 	M2D R = (M2D() << std::cos(theta), -std::sin(theta), std::sin(theta), std::cos(theta)).finished();
@@ -125,13 +131,13 @@ void set_observation(double* node, int32 x, int32 y, V2D v_perp, int32 H, int32 
 	V6D obs_msg = (V6D() << eta(0),  eta(1), Lam_R(0,0),  Lam_R(0,1), Lam_R(1,0), Lam_R(1,1)).finished();
 
 	obs_msg = obs_msg * huber_scale_v2d(v_perp, Lam_R);
-	set_state(node, sub2ind(x, y, H, W) +STS_DIM, &obs_msg); //IDX_OBS =1
+	set_state(pool.node, ind_slf +STS_DIM, &obs_msg); //IDX_OBS =1
 	return;
 }
 
 V6D smoothness_factor(V6D msg_v, V4D state)
 {
-	double inv_sigma2_prior = 1.0 / 0.25;
+	constexpr double inv_sigma2_prior = 1.0 / 0.25;
 	M4D Lam = (M4D() << inv_sigma2_prior, 0.0, -inv_sigma2_prior, 0.0, 0.0, inv_sigma2_prior, 0.0, -inv_sigma2_prior, -inv_sigma2_prior, 0.0, inv_sigma2_prior, 0.0, 0.0, -inv_sigma2_prior, 0.0, inv_sigma2_prior).finished(); // [4 x 4]
     V4D eta = (V4D() << 0.0, 0.0, 0.0, 0.0).finished();
 	
@@ -153,79 +159,97 @@ V6D smoothness_factor(V6D msg_v, V4D state)
 	return msg;
 }
 
-void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, int32 H, int32 W)
+
+void precompute_idx(mem_pool pool, int32 x, int32 y, int32 t, int32 xs[N_EDGE], int32 ys[N_EDGE], int32 inds[N_EDGE], bool active[N_EDGE]){
+	// #pragma simd
+	// for(int32 dir=0; dir<N_EDGE; dir++){
+	// 	xs[dir] = x + dirc[0][dir];
+	// }
+	// for(int32 dir=0; dir<N_EDGE; dir++){
+	// 	ys[dir] = y + dirc[1][dir];
+	// }
+	// #pragma simd
+	// for(int32 dir=0; dir<N_EDGE; dir++){
+	// 	inds[dir] = sub2ind_(xs[dir], ys[dir], pool.H, pool.W);
+	// }
+	// #pragma simd
+	// for(int32 dir=0; dir<N_EDGE; dir++){
+	// 	active[dir] = isActive(inds[dir], t, pool.sae);
+	// }
+
+	#pragma simd
+	for(int32 dir=0; dir<N_EDGE; dir++){
+		xs[dir] = x + dirc[0][dir];
+		ys[dir] = y + dirc[1][dir];
+		inds[dir] = sub2ind_(xs[dir], ys[dir], pool.H, pool.W);
+		active[dir] = isActive(inds[dir], t, pool.sae);
+	}
+}
+void send_message_Nconnect(mem_pool pool, int32 x, int32 y, int32 t, int32 ind_slf)
 {
     V4D state;
     V6D msg_v_all[N_EDGE];
-	V6D msg_p;
-	int32 ind_obs_all_[N_EDGE];
+	int32 xs[N_EDGE];
+	int32 ys[N_EDGE];
+	int32 inds[N_EDGE];
 	bool active[N_EDGE];
+	int32 inds_obs[N_EDGE];
 
 	// For SIMD 
-	#pragma simd
-	for(int32 dir=0; dir<N_EDGE; dir++){
-		active[dir] = isActive(x, y, dir, H, W, t, sae);
-	}
-	int32 ind_slf 	= sub2ind(x, y,  H, W);
-	int32 ind_obs 	= ind_slf+STS_DIM;
-	int32 ind_nod 	= ind_obs+STS_DIM;
+	precompute_idx(pool, x, y, t, xs, ys, inds, active);
 
-	V6D belief = update_state(node, active, ind_slf, ind_obs, ind_nod);
-
-    // get state of self node
-    V2D *mu = get_mu(node, ind_slf);
-	state.head(2) <<*mu;
-
-	// For SIMD 
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){ 	
-		ind_obs_all_[dir] = sub2ind(x + dirc[0][dir], y + dirc[1][dir], H, W) + STS_DIM;
+		inds_obs[dir] = NOD_DIM*inds[dir]  + STS_DIM;
 	}
+
+	V6D belief = update_state(pool.node, active, ind_slf);
+
+    // get state of self node
+    V2D *mu = get_mu(pool.node, ind_slf);
+	state.head(2) <<*mu;
 
 	#pragma simd
     for(int32 dir=0; dir<N_EDGE; dir++){
         if (active[dir]){ 	// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
-            msg_v_all[dir] = belief - *get_state(node, dir*STS_DIM+ind_nod);
+            msg_v_all[dir] = belief - *get_state(pool.node, (dir+2)*STS_DIM+ind_slf);
 		}else{
             msg_v_all[dir] = belief;
         }
 	}
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
-		V2D *mu_ = get_mu(node, ind_obs_all_[dir]);  //dst state
+		V2D *mu_ = get_mu(pool.node, inds_obs[dir]);  //dst state
 		state.tail(2) << *mu_;
-        msg_p       = smoothness_factor(msg_v_all[dir], state); // prior factor message
-        set_state(node, ind_obs_all_[dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
+        V6D msg_p       = smoothness_factor(msg_v_all[dir], state); // prior factor message
+        set_state(pool.node, inds_obs[dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
     }
 }
 
 
-void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, int32 H, int32 W) // 多分再帰でかける？ k=1 hopだからいいか
+void message_passing_event(mem_pool pool,  int32 x, int32 y, int32 t, int32 ind_slf) // 多分再帰でかける？ k=1 hopだからいいか
 {
     V6D belief;
+	int32 xs[N_EDGE];
+	int32 ys[N_EDGE];
+	int32 inds[N_EDGE];
 	bool active[N_EDGE];
 
 	// For SIMD 
-	#pragma simd
-	for(int32 dir=0; dir<N_EDGE; dir++){
-		active[dir] = isActive(x, y, dir, H, W, t, sae);
-	}
-	int32 ind_slf = sub2ind(x, y,  H, W);
-	int32 ind_obs = ind_slf+STS_DIM;
-	int32 ind_nod = ind_obs+STS_DIM;
-
+	precompute_idx(pool, x, y, t, xs, ys, inds, active);
+	
 	// self node
-    send_message_Nconnect(node, sae, x, y, t, H, W);
+    send_message_Nconnect(pool, x, y, t, ind_slf);
 	
 	// neighor node
     for(int32 dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
-        	send_message_Nconnect(node, sae, x + dirc[0][dir], y + dirc[1][dir], t, H, W);
+        	send_message_Nconnect(pool, xs[dir], ys[dir], t, inds[dir]*NOD_DIM);
         }
     }
 
 	// self node
-	update_state(node, active, ind_slf, ind_obs, ind_nod);
+	update_state(pool.node, active, ind_slf);
 	return;
 }
 
@@ -241,14 +265,16 @@ void process_batch(mem_pool pool, int32 b_ptr)
         int32 t = pool.timestamps[i];
 
 		// printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
-		pool.sae[(pool.W*y + x)] = t;
+		
+		int32 ind = sub2ind_(x, y,  pool.H, pool.W);
+		pool.sae[ind] = t;
+		int32 ind_slf 	=ind*NOD_DIM;
 
 		// Compute data factor and Set the observation
-		set_observation(pool.node, x, y, v_perp,  pool.H, pool.W);
-		// set_state(pool.node, sub2ind(x, y, pool.H, pool.W) +STS_DIM, &obs_msg); //IDX_OBS =1
+		set_observation(pool, v_perp, ind_slf);
 
 		// Core of message passing
-		message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);
+		message_passing_event(pool, x, y, t, ind_slf);
 	}
 return;
 }
@@ -257,8 +283,8 @@ return;
 mem_pool initialize(mem_pool pool){
 	// memset(dirc,0, 2*(N_EDGE));
 	// memset(dirc_idx,0, 1*(N_EDGE));
-	int32 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
-	int32 base_dirc_idx[8]	= {1,  0,  3,  2,  5,  4,  7,  6};  
+	constexpr int32 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
+	constexpr int32 base_dirc_idx[8]	= {1,  0,  3,  2,  5,  4,  7,  6};  
 
 	for (int32 s_=0; s_<N_SCALE; s_++){
 		int32 s = N_SCALE - s_ - 1;

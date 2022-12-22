@@ -42,5 +42,5 @@ void debug_output(mem_pool pool);
 void save_data(mem_pool pool, int32 seq_id, int32 index, int32 c_time);
 void process_batch(mem_pool pool, int32 b_ptr);
 mem_pool initialize(mem_pool pool);
-int32 sub2ind(int32 x, int32 y, int32 H, int32 W);
+int32 sub2ind_nod(int32 x, int32 y, int32 H, int32 W);
 #endif
