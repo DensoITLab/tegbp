@@ -97,7 +97,7 @@ V6D update_state(double * node, bool* active, int32 ind_slf)
 
 double huber_scale_(double M2){
 	constexpr double huber	= 1.0;
-	constexpr double huber2   = huber*huber;
+	constexpr double huber2 = huber*huber;
 	constexpr double scale	= 1.0;
 	if (huber > 0){
 		if (M2 < huber2){
@@ -119,7 +119,7 @@ double huber_scale_v4d(V4D *state, M4D* Lam){
 	return huber_scale_(M2);
 }
 
-void set_observation(mem_pool pool, V2D* v_perp, int32 ind_slf)
+void set_observation(mem_pool* pool, V2D* v_perp, int32 ind_slf)
 {
 	constexpr double inv_sigma2_obs_r	= 1.0/9.0;
 	constexpr double inv_sigma2_obs_t 	= 1.0/100.0;
@@ -133,7 +133,7 @@ void set_observation(mem_pool pool, V2D* v_perp, int32 ind_slf)
 	V6D obs_msg = (V6D() << eta(0),  eta(1), Lam_R(0,0),  Lam_R(0,1), Lam_R(1,0), Lam_R(1,1)).finished();
 
 	obs_msg = obs_msg * huber_scale_v2d(v_perp, &Lam_R);
-	set_state(pool.node, ind_slf +STS_DIM, &obs_msg); //IDX_OBS =1
+	set_state((*pool).node, ind_slf +STS_DIM, &obs_msg); //IDX_OBS =1
 	return;
 }
 
@@ -162,7 +162,7 @@ V6D smoothness_factor(V6D* msg_v, V4D* state)
 }
 
 
-void precompute_idx(mem_pool pool, XYTI* xyti, int32 xyis[][N_EDGE], bool active[N_EDGE]){
+void precompute_idx(mem_pool* pool, XYTI* xyti, int32 xyi_n[4][N_EDGE], bool active[N_EDGE]){
 	// #pragma simd
 	// for(int32 dir=0; dir<N_EDGE; dir++){
 	// 	xs[dir] = x + dirc[0][dir];
@@ -181,13 +181,13 @@ void precompute_idx(mem_pool pool, XYTI* xyti, int32 xyis[][N_EDGE], bool active
 
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
-		xyis[0][dir] = (*xyti).at(0) + dirc[0][dir];
-		xyis[1][dir] = (*xyti).at(1) + dirc[1][dir];
-		xyis[2][dir] = sub2ind_(xyis[0][dir], xyis[1][dir], pool.H, pool.W);
-		active[dir] = isActive(xyis[2][dir], (*xyti).at(2), pool.sae);
+		xyi_n[0][dir] = (*xyti)[0] + dirc[0][dir];
+		xyi_n[1][dir] = (*xyti)[1] + dirc[1][dir];
+		xyi_n[2][dir] = sub2ind_(xyi_n[0][dir], xyi_n[1][dir], (*pool).H, (*pool).W);
+		active[dir] = isActive(xyi_n[2][dir], (*xyti).at(2), (*pool).sae);
 	}
 }
-void send_message_Nconnect(mem_pool pool,  XYTI* xyti)
+void send_message_Nconnect(mem_pool* pool,  XYTI* xyti)
 {
     V4D state;
     V6D msg_v_n[N_EDGE];
@@ -202,31 +202,30 @@ void send_message_Nconnect(mem_pool pool,  XYTI* xyti)
 		 xyi_n[3][dir] = NOD_DIM*xyi_n[2][dir]  + STS_DIM;
 	}
 
-	V6D belief = update_state(pool.node, act_n, (*xyti)[3]);
+	V6D belief = update_state((*pool).node, act_n, (*xyti)[3]);
 
     // get state of self node
-    V2D *mu = get_mu(pool.node, (*xyti)[3]);
+    V2D *mu = get_mu((*pool).node, (*xyti)[3]);
 	state.head(2) <<*mu;
 
 	#pragma simd
     for(int32 dir=0; dir<N_EDGE; dir++){
         if (act_n[dir]){ 	// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
-            msg_v_n[dir] = belief - *get_state(pool.node, (dir+2)*STS_DIM+(*xyti)[3]);
+            msg_v_n[dir] = belief - *get_state((*pool).node, (dir+2)*STS_DIM+(*xyti)[3]);
 		}else{
             msg_v_n[dir] = belief;
         }
 	}
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
-		V2D *mu_ = get_mu(pool.node,  xyi_n[3][dir]);  //dst state
+		V2D *mu_ = get_mu((*pool).node,  xyi_n[3][dir]);  //dst state
 		state.tail(2) << *mu_;
         V6D msg_p       = smoothness_factor(&msg_v_n[dir], &state); // prior factor message
-        set_state(pool.node,  xyi_n[3][dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
+        set_state((*pool).node,  xyi_n[3][dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
     }
 }
 
-
-void message_passing_event(mem_pool pool,  XYTI* xyti) // 多分再帰でかける？ k=1 hopだからいいか
+void message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかける？ k=1 hopだからいいか
 {
     V6D belief;
 	int32 xyi_n[4][N_EDGE];
@@ -247,7 +246,7 @@ void message_passing_event(mem_pool pool,  XYTI* xyti) // 多分再帰でかけ�
     }
 
 	// self node
-	update_state(pool.node, act_n, (*xyti)[3]);
+	update_state((*pool).node, act_n, (*xyti)[3]);
 	return;
 }
 
@@ -268,10 +267,10 @@ void process_batch(mem_pool pool, int32 b_ptr)
 		
 		pool.sae[ind] = t;
 		// Compute data factor and Set the observation
-		set_observation(pool, &v_perp, xyti[3]);
+		set_observation(&pool, &v_perp, xyti[3]);
 
 		// Core of message passing
-		message_passing_event(pool, &xyti);
+		message_passing_event(&pool, &xyti);
 	}
 return;
 }
