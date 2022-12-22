@@ -162,7 +162,7 @@ V6D smoothness_factor(V6D* msg_v, V4D* state)
 }
 
 
-void precompute_idx(mem_pool pool, XYTI* xyti, int32 xs[N_EDGE], int32 ys[N_EDGE], int32 inds[N_EDGE], bool active[N_EDGE]){
+void precompute_idx(mem_pool pool, XYTI* xyti, int32 xyis[][N_EDGE], bool active[N_EDGE]){
 	// #pragma simd
 	// for(int32 dir=0; dir<N_EDGE; dir++){
 	// 	xs[dir] = x + dirc[0][dir];
@@ -181,50 +181,47 @@ void precompute_idx(mem_pool pool, XYTI* xyti, int32 xs[N_EDGE], int32 ys[N_EDGE
 
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
-		xs[dir] = (*xyti).at(0) + dirc[0][dir];
-		ys[dir] = (*xyti).at(1) + dirc[1][dir];
-		inds[dir] = sub2ind_(xs[dir], ys[dir], pool.H, pool.W);
-		active[dir] = isActive(inds[dir], (*xyti).at(2), pool.sae);
+		xyis[0][dir] = (*xyti).at(0) + dirc[0][dir];
+		xyis[1][dir] = (*xyti).at(1) + dirc[1][dir];
+		xyis[2][dir] = sub2ind_(xyis[0][dir], xyis[1][dir], pool.H, pool.W);
+		active[dir] = isActive(xyis[2][dir], (*xyti).at(2), pool.sae);
 	}
 }
 void send_message_Nconnect(mem_pool pool,  XYTI* xyti)
 {
     V4D state;
-    V6D msg_v_all[N_EDGE];
-	int32 xs[N_EDGE];
-	int32 ys[N_EDGE];
-	int32 inds[N_EDGE];
-	bool active[N_EDGE];
-	int32 inds_obs[N_EDGE];
+    V6D msg_v_n[N_EDGE];
+	int32 xyi_n[4][N_EDGE];
+	bool act_n[N_EDGE];
 
 	// For SIMD 
-	precompute_idx(pool, xyti, xs, ys, inds, active);
+	precompute_idx(pool, xyti, xyi_n, act_n);
 
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){ 	
-		inds_obs[dir] = NOD_DIM*inds[dir]  + STS_DIM;
+		 xyi_n[3][dir] = NOD_DIM*xyi_n[2][dir]  + STS_DIM;
 	}
 
-	V6D belief = update_state(pool.node, active, (*xyti).at(3));
+	V6D belief = update_state(pool.node, act_n, (*xyti)[3]);
 
     // get state of self node
-    V2D *mu = get_mu(pool.node, (*xyti).at(3));
+    V2D *mu = get_mu(pool.node, (*xyti)[3]);
 	state.head(2) <<*mu;
 
 	#pragma simd
     for(int32 dir=0; dir<N_EDGE; dir++){
-        if (active[dir]){ 	// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
-            msg_v_all[dir] = belief - *get_state(pool.node, (dir+2)*STS_DIM+(*xyti).at(3));
+        if (act_n[dir]){ 	// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
+            msg_v_n[dir] = belief - *get_state(pool.node, (dir+2)*STS_DIM+(*xyti)[3]);
 		}else{
-            msg_v_all[dir] = belief;
+            msg_v_n[dir] = belief;
         }
 	}
 	#pragma simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
-		V2D *mu_ = get_mu(pool.node, inds_obs[dir]);  //dst state
+		V2D *mu_ = get_mu(pool.node,  xyi_n[3][dir]);  //dst state
 		state.tail(2) << *mu_;
-        V6D msg_p       = smoothness_factor(&msg_v_all[dir], &state); // prior factor message
-        set_state(pool.node, inds_obs[dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
+        V6D msg_p       = smoothness_factor(&msg_v_n[dir], &state); // prior factor message
+        set_state(pool.node,  xyi_n[3][dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
     }
 }
 
@@ -232,31 +229,25 @@ void send_message_Nconnect(mem_pool pool,  XYTI* xyti)
 void message_passing_event(mem_pool pool,  XYTI* xyti) // 多分再帰でかける？ k=1 hopだからいいか
 {
     V6D belief;
-	int32 xs[N_EDGE];
-	int32 ys[N_EDGE];
-	int32 inds[N_EDGE];
-	bool active[N_EDGE];
-
-	// int32 x = (*xyti).at(0);
-	// int32 y = (*xyti).at(1);
-	// int32 t = (*xyti).at(2);
+	int32 xyi_n[4][N_EDGE];
+	bool act_n[N_EDGE];
 
 	// For SIMD 
-	precompute_idx(pool, xyti, xs, ys, inds, active);
+	precompute_idx(pool, xyti, xyi_n, act_n);
 
 	// self node
     send_message_Nconnect(pool, xyti);
 	
 	// neighor node
     for(int32 dir=0; dir<N_EDGE; dir++){
-		if (active[dir]){
-			XYTI xyti_ = {xs[dir], ys[dir], (*xyti).at(2), inds[dir]*NOD_DIM};
+		if (act_n[dir]){
+			XYTI xyti_ = {xyi_n[0][dir], xyi_n[1][dir], (*xyti).at(2), xyi_n[2][dir]*NOD_DIM};
         	send_message_Nconnect(pool, &xyti_);
         }
     }
 
 	// self node
-	update_state(pool.node, active, (*xyti).at(3));
+	update_state(pool.node, act_n, (*xyti)[3]);
 	return;
 }
 
@@ -272,13 +263,12 @@ void process_batch(mem_pool pool, int32 b_ptr)
         int32 t = pool.timestamps[i];
 		int32 ind = sub2ind_(x, y,  pool.H, pool.W);
 
-		// XYT xyt = {pool.indices[2*i+0], pool.indices[2*i+1], pool.timestamps[i]};
-		XYTI xyti = {x,y, t, ind*NOD_DIM};
+		XYTI xyti = {x, y, t, ind*NOD_DIM};
 		// printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
 		
 		pool.sae[ind] = t;
 		// Compute data factor and Set the observation
-		set_observation(pool, &v_perp, xyti.at(3));
+		set_observation(pool, &v_perp, xyti[3]);
 
 		// Core of message passing
 		message_passing_event(pool, &xyti);
