@@ -4,9 +4,13 @@ Code for CVPR submmision 4712.
 - [Overleaf](https://www.overleaf.com/project/634f900abe6816625b0e860e)
 - [PDF](https://github.com/DensoITLab/tegbp/blob/master/material/CVPR2023_4712.pdf)
 
+![normal (input)](https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png "normal (input)")
+![full (output)](https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png "full (output)")
+<!-- <img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png" alt="normal flow"  title="normal flow"> -->
+<!-- <img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png" alt="full flow"  title="full flow"> -->
 
-<img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png" alt="normal flow"  title="normal flow">
-<img src="https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png" alt="full flow"  title="full flow">
+[Indoor Flying](https://user-images.githubusercontent.com/270088/208863063-4f1a154f-bb05-4ff9-a4c0-67d1bd6a7e3f.mov)
+
 
 ## Setup dependency 
 ```
@@ -33,7 +37,9 @@ make
 ## Run
 ```
 ./process #thread #events
-./process 64 100000
+./process =1 "indoor_flying2" -1 -1
+./process -1 "bricks" 15000 // debug
+ ./process -1 "indoor_flying2" -1 -1
 ```
 
 ## Visualization
@@ -61,3 +67,6 @@ Coder: Y.Sekikawa, J.Nagata
 - [OMP hello](https://curc.readthedocs.io/en/latest/programming/OpenMP-C.html#id2)
 - [OMP tutorial](https://msu-cmse-courses.github.io/cmse401-S21-student/assignments/0225-HW2_OMP.html)
 - [OMP youtube](https://www.youtube.com/playlist?list=PLLX-Q6B8xqZ8n8bwjGdzBJ25X2utwnoEG)
+- [openeb](https://github.com/prophesee-ai/openeb)
+- [noise](https://docs.prophesee.ai/stable/metavision_sdk/modules/cv/samples/noise_filtering_cpp.html#chapter-sdk-cv-samples-noise-filtering-cpp)
+- [flow](https://docs.prophesee.ai/stable/metavision_sdk/modules/cv/samples/flow.html#chapter-sdk-cv-samples-flow)
