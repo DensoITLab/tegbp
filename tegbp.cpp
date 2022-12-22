@@ -111,7 +111,7 @@ double huber_scale_v4d(V4D state, M4D Lam){
 	return huber_scale_(M2);
 }
 
-V6D calc_data_term(V2D v_perp)
+void set_observation(double* node, int32 x, int32 y, V2D v_perp, int32 H, int32 W)
 {
 	double inv_sigma2_obs_r	= 1.0/9.0;
 	double inv_sigma2_obs_t = 1.0/100.0;
@@ -124,8 +124,9 @@ V6D calc_data_term(V2D v_perp)
 	V2D eta     = Lam_R * v_perp;
 	V6D obs_msg = (V6D() << eta(0),  eta(1), Lam_R(0,0),  Lam_R(0,1), Lam_R(1,0), Lam_R(1,1)).finished();
 
-	//  huber
-	return obs_msg * huber_scale_v2d(v_perp, Lam_R);
+	obs_msg = obs_msg * huber_scale_v2d(v_perp, Lam_R);
+	set_state(node, sub2ind(x, y, H, W) +STS_DIM, &obs_msg); //IDX_OBS =1
+	return;
 }
 
 V6D smoothness_factor(V6D msg_v, V4D state)
@@ -143,19 +144,18 @@ V6D smoothness_factor(V6D msg_v, V4D state)
 	M2D Lam_aa = (M2D() << Lam(0, 0), Lam(0, 1), Lam(1, 0), Lam(1, 1)).finished();
 	M2D Lam_ab = (M2D() << Lam(0, 2), Lam(0, 3), Lam(1, 2), Lam(1, 3)).finished();
 	M2D Lam_bb = (M2D() << Lam(2, 2) + msg_v(2), Lam(2, 3) + msg_v(3), Lam(3, 2) + msg_v(4), Lam(3, 3) + msg_v(5)).finished();
-    V2D eta_a  = (V2D() << eta(0, 0), eta(1, 0)).finished();
+    V2D eta_a  = eta.head(2);
     V2D eta_b  = (V2D() << eta(2, 0) + msg_v(0), eta(3, 0) + msg_v(1)).finished();
 	
    	V2D eta_ = eta_a - Lam_ab * Lam_bb.inverse() * eta_b;
    	M2D Lam_ = Lam_aa - Lam_ab * Lam_bb.inverse() * Lam_ab.transpose();
-	V6D msg = (V6D() << eta_(0), eta_(1), Lam_(0, 0),  Lam_(0, 1), Lam_(1, 0), Lam_(1, 1)).finished();
+	V6D msg = (V6D() << eta_.head(2), Lam_(0, 0),  Lam_(0, 1), Lam_(1, 0), Lam_(1, 1)).finished();
 	return msg;
 }
 
 void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, int32 H, int32 W)
 {
     V4D state;
-    // V6D *slf, *src, *dst;
     V6D msg_v_all[N_EDGE];
 	V6D msg_p;
 	int32 ind_obs_all_[N_EDGE];
@@ -166,7 +166,7 @@ void send_message_Nconnect(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
 	}
-	int32 ind_slf 	= sub2ind(x, y,  H, W); //IDX_SLF=0
+	int32 ind_slf 	= sub2ind(x, y,  H, W);
 	int32 ind_obs 	= ind_slf+STS_DIM;
 	int32 ind_nod 	= ind_obs+STS_DIM;
 
@@ -210,7 +210,7 @@ void message_passing_event(double* node, int32* sae, int32 x, int32 y, int32 t, 
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		active[dir] = isActive(x, y, dir, H, W, t, sae);
 	}
-	int32 ind_slf = sub2ind(x, y,  H, W); //IDX_SLF=0
+	int32 ind_slf = sub2ind(x, y,  H, W);
 	int32 ind_obs = ind_slf+STS_DIM;
 	int32 ind_nod = ind_obs+STS_DIM;
 
@@ -243,12 +243,9 @@ void process_batch(mem_pool pool, int32 b_ptr)
 		// printf("([%3d] %3.2f, %3.2f, %2d, %2d, %3d)  thread: %d\n",i, v_perp(0), v_perp(1), x, y, t, omp_get_thread_num());
 		pool.sae[(pool.W*y + x)] = t;
 
-		// Compute data factor
-		V6D obs_msg = calc_data_term(v_perp);
-		// printf("(%3.2f, %3.2f) \n",obs_msg(0), obs_msg(1));
-
-		// Set the observation
-		set_state(pool.node, sub2ind(x, y, pool.H, pool.W) +STS_DIM, &obs_msg); //IDX_OBS =1
+		// Compute data factor and Set the observation
+		set_observation(pool.node, x, y, v_perp,  pool.H, pool.W);
+		// set_state(pool.node, sub2ind(x, y, pool.H, pool.W) +STS_DIM, &obs_msg); //IDX_OBS =1
 
 		// Core of message passing
 		message_passing_event(pool.node, pool.sae, x, y, t, pool.H, pool.W);
@@ -274,18 +271,18 @@ mem_pool initialize(mem_pool pool){
 		}
 	}
 
-	printf("\n\n");
-	for (int32 row =0; row<2; row++){
-		for (int32 col =0; col<(N_EDGE); col++){
-			printf("%d,", dirc[row][col]);
-		}
-	}
-	printf("\n\n");
+	// printf("\n\n");
+	// for (int32 row =0; row<2; row++){
+	// 	for (int32 col =0; col<(N_EDGE); col++){
+	// 		printf("%d,", dirc[row][col]);
+	// 	}
+	// }
+	// printf("\n\n");
 
-	for (int32 col =0; col<(N_EDGE); col++){
-		printf("%d,", dirc_idx[col]);
-	}
-	printf("\n");
+	// for (int32 col =0; col<(N_EDGE); col++){
+	// 	printf("%d,", dirc_idx[col]);
+	// }
+	// printf("\n");
 
     // mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*pool.W*pool.H*sizeof(double));
