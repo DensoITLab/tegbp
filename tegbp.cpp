@@ -38,10 +38,6 @@ bool isActive(int32 ind, int32 t, int32* sae)
 {
 	return ((t - sae[ind]) < DT_ACT);
 }
-// bool isActive(int32 x, int32 y, int32 dir, int32 H, int32 W, int32 t, int32* sae)
-// {
-// 	return ((t - sae[(x+dirc[0][dir] + W*(y+dirc[1][dir]))]) < DT_ACT);
-// }
 
 // Geter and Setter
 #pragma omp declare simd
@@ -57,17 +53,17 @@ V2D* get_mu(double * node, int32 ind)
 #pragma omp declare simd
 void set_state(double * node, int32 ind, V6D* data)
 {
-	V6D* ptr = (V6D*)&node[ind];
-	*ptr = *data;
-	// memcpy(&node[ind], data, sizeof(V6D));
+	// V6D* ptr = (V6D*)&node[ind];
+	// *ptr = *data;
+	memcpy(&node[ind], data, sizeof(V6D));
 	return;
 }
 #pragma omp declare simd
 void set_mu(double * node, int32 ind, V2D* data)
 {
-	V2D* ptr = (V2D*)&node[ind];
-	*ptr = *data;
-	// memcpy(&node[ind], data, sizeof(V2D));
+	// V2D* ptr = (V2D*)&node[ind];
+	// *ptr = *data;
+	memcpy(&node[ind], data, sizeof(V2D));
 	return;
 }
 V2D belief_vec_to_mu(V6D belief)
@@ -179,7 +175,7 @@ void precompute_idx(mem_pool* pool, XYTI* xyti, int32 xyi_n[4][N_EDGE], bool act
 	// 	active[dir] = isActive(inds[dir], t, pool.sae);
 	// }
 
-	#pragma simd
+	#pragma omp simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		xyi_n[0][dir] = (*xyti)[0] + dirc[0][dir];
 		xyi_n[1][dir] = (*xyti)[1] + dirc[1][dir];
@@ -197,7 +193,7 @@ void send_message_Nconnect(mem_pool* pool,  XYTI* xyti)
 	// For SIMD 
 	precompute_idx(pool, xyti, xyi_n, act_n);
 
-	#pragma simd
+	#pragma omp simd
 	for(int32 dir=0; dir<N_EDGE; dir++){ 	
 		 xyi_n[3][dir] = NOD_DIM*xyi_n[2][dir]  + STS_DIM;
 	}
@@ -208,7 +204,7 @@ void send_message_Nconnect(mem_pool* pool,  XYTI* xyti)
     V2D *mu = get_mu((*pool).node, (*xyti)[3]);
 	state.head(2) <<*mu;
 
-	#pragma simd
+	// #pragma omp simd
     for(int32 dir=0; dir<N_EDGE; dir++){
         if (act_n[dir]){ 	// 送る方向から来るmassageを確認  activeなときはそれを引いておかなければいけない
             msg_v_n[dir] = belief - *get_state((*pool).node, (dir+2)*STS_DIM+(*xyti)[3]);
@@ -216,7 +212,7 @@ void send_message_Nconnect(mem_pool* pool,  XYTI* xyti)
             msg_v_n[dir] = belief;
         }
 	}
-	#pragma simd
+	// #pragma omp simd
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		V2D *mu_ = get_mu((*pool).node,  xyi_n[3][dir]);  //dst state
 		state.tail(2) << *mu_;
@@ -254,8 +250,8 @@ void message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかけ
 void process_batch(mem_pool pool, int32 b_ptr)
 {
 	// #pragma omp for nowait
-	// #pragma omp for simd nowait
-	#pragma omp for simd nowait schedule(dynamic)
+	#pragma omp for nowait schedule(dynamic)
+	// #pragma omp for simd nowait schedule(dynamic)
     for(int32 i=b_ptr; i<(b_ptr+pool.WINSIZE); i++){
 		V2D v_perp = (V2D() << pool.v_norms[2*i+0], pool.v_norms[2*i+1]).finished();
 		int32 x = pool.indices[2*i+0]; int32 y = pool.indices[2*i+1]; 
