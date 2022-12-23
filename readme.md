@@ -16,6 +16,7 @@ Code for CVPR submmision 4712.
 ```
 sudo apt install libeigen3-dev
 pip install Command
+source /opt/intel/oneapi/setvars.sh --force
 ```
 
 ## Prepare result folder
