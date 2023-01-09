@@ -6,7 +6,8 @@
 #include <omp.h>
 #include <random>
 #include <unistd.h>
-#include "tegbp.hpp"
+// #include "tegbp.hpp"
+#include "plane_fitting.hpp"
 #include "progressbar.hpp"
 #include <sstream>
 
@@ -46,7 +47,7 @@ int32 main(int32 argc, char **argv)
 
 	printf("Start main dataset: %s WINSIZE %d\n", data_name.c_str(), WINSIZE);
 	// Load data and Initialize Global varialble 	by Allocating memory
-	mem_pool pool = load_data(data_name);
+	mem_pool pool = load_data_pf(data_name);
 	pool.WINSIZE = WINSIZE;
 
 	// Run the main image processing function
@@ -73,15 +74,16 @@ int32 main(int32 argc, char **argv)
 		e_time = pool.timestamps[b_ptr+WINSIZE];
 		// bar.update(format(" %dK - %dK  %5.2f - %5.2f",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0));
 		printf("%dK - %dK  %5.2f - %5.2f\n",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0);
-		#pragma omp parallel
-		{
-		process_batch(pool, b_ptr);
-		}
+		// #pragma omp parallel
+		// {
+		// process_batch(pool, b_ptr);
+		// }
+		process_batch_pf(pool, b_ptr);
 
 		b_ptr 	= b_ptr + (WINSIZE*increment); 
 
 		if (n_itr_save>0 & itr%n_itr_save==0){
-			save_data(pool, itr, 0, e_time); // estimated flow
+			save_data_pf(pool, itr, 0, e_time); // estimated flow
 			// save_data(pool, itr, 1, c_time); // normal flow
 		}
 	}
