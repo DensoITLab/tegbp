@@ -16,6 +16,7 @@ Code for CVPR submmision 4712.
 ```
 sudo apt install libeigen3-dev
 pip install Command
+source /opt/intel/oneapi/setvars.sh --force
 ```
 
 ## Prepare result folder
@@ -70,3 +71,4 @@ Coder: Y.Sekikawa, J.Nagata
 - [openeb](https://github.com/prophesee-ai/openeb)
 - [noise](https://docs.prophesee.ai/stable/metavision_sdk/modules/cv/samples/noise_filtering_cpp.html#chapter-sdk-cv-samples-noise-filtering-cpp)
 - [flow](https://docs.prophesee.ai/stable/metavision_sdk/modules/cv/samples/flow.html#chapter-sdk-cv-samples-flow)
+- [normal flow](https://github.com/gorchard/FPGA_event_based_optical_flow)
