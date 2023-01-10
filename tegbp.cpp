@@ -80,7 +80,7 @@ V6D update_state(double * node, bool* active, int32 ind_slf)
 	V6D belief = *get_state(node, ind_slf+STS_DIM);
 	for(int32 dir=0; dir<N_EDGE; dir++){
 		if (active[dir]){
-			belief = belief + *get_state(node, ind_slf + (dir+2)*STS_DIM);
+			belief += *get_state(node, ind_slf + (dir+2)*STS_DIM);
 		}
 	}
 
@@ -91,6 +91,7 @@ V6D update_state(double * node, bool* active, int32 ind_slf)
 	return belief;
 }
 
+#pragma omp declare simd
 double huber_scale_(double M2){
 	constexpr double huber	= 1.0;
 	constexpr double huber2 = huber*huber;
@@ -180,7 +181,7 @@ void precompute_idx(mem_pool* pool, XYTI* xyti, int32 xyi_n[4][N_EDGE], bool act
 		xyi_n[0][dir] = (*xyti)[0] + dirc[0][dir];
 		xyi_n[1][dir] = (*xyti)[1] + dirc[1][dir];
 		xyi_n[2][dir] = sub2ind_(xyi_n[0][dir], xyi_n[1][dir], (*pool).H, (*pool).W);
-		active[dir] = isActive(xyi_n[2][dir], (*xyti).at(2), (*pool).sae);
+		active[dir]   = isActive(xyi_n[2][dir], (*xyti).at(2), (*pool).sae);
 	}
 }
 void send_message_Nconnect(mem_pool* pool,  XYTI* xyti)
@@ -217,7 +218,7 @@ void send_message_Nconnect(mem_pool* pool,  XYTI* xyti)
 		V2D *mu_ = get_mu((*pool).node,  xyi_n[3][dir]);  //dst state
 		state.tail(2) << *mu_;
         V6D msg_p       = smoothness_factor(&msg_v_n[dir], &state); // prior factor message
-        set_state((*pool).node,  xyi_n[3][dir]+ STS_DIM + dirc_idx[dir]*STS_DIM, &msg_p);
+        set_state((*pool).node,  xyi_n[3][dir] + (dirc_idx[dir]+1)*STS_DIM, &msg_p);
     }
 }
 
@@ -233,7 +234,7 @@ void message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかけ
 	// self node
     send_message_Nconnect(pool, xyti);
 	
-	// neighor node
+	#pragma omp simd
     for(int32 dir=0; dir<N_EDGE; dir++){
 		if (act_n[dir]){
 			XYTI xyti_ = {xyi_n[0][dir], xyi_n[1][dir], (*xyti).at(2), xyi_n[2][dir]*NOD_DIM};

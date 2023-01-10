@@ -33,6 +33,7 @@ mkdir result/indoor_flying2
 ## Compile 
 ```
 make
+source /opt/intel/oneapi/setvars.sh
 ```
 
 ## Run
