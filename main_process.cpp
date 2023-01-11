@@ -19,8 +19,7 @@ int32 main(int32 argc, char **argv)
 	int32 WINSIZE 		    = 1000;
 	int32 n_itr_save 		= 1;
 	std::string data_name 	= "bricks";
-	bool is_full 			= false; // true, false
-
+	bool is_full 			= true; // true, false
 
 	if (argc>1){
 		if (atoi(argv[1])>0){
