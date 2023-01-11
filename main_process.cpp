@@ -41,9 +41,7 @@ int32 main(int32 argc, char **argv)
 	}
 
 	if (argc>4){
-		if (atoi(argv[4])>0){
-			n_itr_save = atoi(argv[4]);
-		}
+		n_itr_save = atoi(argv[4]);
 	}
 
 	if (argc>5){

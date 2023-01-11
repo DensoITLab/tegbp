@@ -131,6 +131,12 @@ void save_data(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
 	double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
 	memset(fimg, 0.0, 2*pool.W*pool.H*sizeof(double));
 
+	// for(int32 y=0; y<pool.H; y++){
+	// 	for(int32 x=0;x<pool.W;x++){
+	// 		fimg[2*(pool.W*y + x)+0] 	= 0;
+	// 		fimg[2*(pool.W*y + x)+1] 	= 0;
+	// 	}
+	// }
 	int32 time;
 	#pragma omp parallel for
 	for(int32 y=0; y<pool.H; y++)
