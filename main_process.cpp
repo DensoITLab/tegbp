@@ -45,7 +45,7 @@ int32 main(int32 argc, char **argv)
 		n_itr_save = atoi(argv[4]);
 	}
 
-	printf("Start main dataset: %s WINSIZE %d\n", data_name.c_str(), WINSIZE);
+	printf("Start main dataset: %s WINSIZE %d num_thread %d\n", data_name.c_str(), WINSIZE, num_thread);
 	// Load data and Initialize Global varialble 	by Allocating memory
 	data_cfg cfg = load_cfg(data_name);
 	mem_pool pool;
@@ -65,7 +65,7 @@ int32 main(int32 argc, char **argv)
 	int32 n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
 	int32 increment 	= 1;
 	if (pool.WINSIZE>=pool.B){
-		// For debug
+		// For benchmarking
 		n_itr = 100;
 		increment=0;
 	}
@@ -78,30 +78,41 @@ int32 main(int32 argc, char **argv)
 	std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
 
-	for (int32 itr=0; itr<n_itr; itr++){
-		s_time = pool.timestamps[b_ptr];
-		e_time = pool.timestamps[b_ptr+WINSIZE];
-		// bar.update(format(" %dK - %dK  %5.2f - %5.2f",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0));
-		printf("%dK - %dK  %5.2f - %5.2f\n",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0);
+	if (is_full){
+		for (int32 itr=0; itr<n_itr; itr++){
+			s_time = pool.timestamps[b_ptr];
+			e_time = pool.timestamps[b_ptr+WINSIZE];
+			// bar.update(format(" %dK - %dK  %5.2f - %5.2f",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0));
+			printf("%dK - %dK  %5.2f - %5.2f\n",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0);
 
-		if (is_full){
-			process_batch_full(pool, b_ptr);
-		}else{
+			#pragma omp parallel
+			{
+				process_batch_full(pool, b_ptr);
+			}
+
+			b_ptr 	= b_ptr + (WINSIZE*increment); 
+
+			if (n_itr_save>0 & itr%n_itr_save==0){
+				save_data(pool, itr, 0, e_time); // estimated flow
+			}
+		}
+	}else{
+		for (int32 itr=0; itr<n_itr; itr++){
+			s_time = pool.timestamps[b_ptr];
+			e_time = pool.timestamps[b_ptr+WINSIZE];
+			// bar.update(format(" %dK - %dK  %5.2f - %5.2f",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0));
+			printf("%dK - %dK  %5.2f - %5.2f\n",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0);
+
 			#pragma omp parallel
 			{
 				process_batch_nrml(pool, b_ptr);
 			}
-		}
 
-		b_ptr 	= b_ptr + (WINSIZE*increment); 
+			b_ptr 	= b_ptr + (WINSIZE*increment); 
 
-		if (n_itr_save>0 & itr%n_itr_save==0){
-			if (is_full){
-				save_data(pool, itr, 0, e_time); // estimated flow
-			}else{
+			if (n_itr_save>0 & itr%n_itr_save==0){
 				save_data(pool, itr, -1, e_time); // estimated flow
 			}
-
 		}
 	}
 	double end = omp_get_wtime();

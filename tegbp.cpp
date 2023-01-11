@@ -13,12 +13,6 @@
 
 using namespace std;
 
-// OMP magic
-// #pragma omp critical
-// #pragma omp barrier
-// #pragma omp barrier
-// #pragma omp for nowait
-
 int32 dirc[2][N_EDGE];
 int32 dirc_idx[N_EDGE];
 
@@ -280,8 +274,6 @@ mem_pool initialize_full(data_cfg cfg){
 	pool.W = cfg.W;
 	pool.B = cfg.B;
 
-	// memset(dirc,0, 2*(N_EDGE));
-	// memset(dirc_idx,0, 1*(N_EDGE));
 	constexpr int32 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
 	constexpr int32 base_dirc_idx[8]	= {1,  0,  3,  2,  5,  4,  7,  6};  
 
