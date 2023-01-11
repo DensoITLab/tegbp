@@ -127,6 +127,7 @@ def flow_to_image(flow_uv, clip_flow=None, convert_to_bgr=False):
     rad = np.sqrt(np.square(u) + np.square(v))
     # rad_max = np.max(rad)
     rad_max = np.sqrt(2.0)
+    # rad_max = np.sqrt(0.5)
     # rad_max = np.max(rad)/2.0
     epsilon = 1e-5
     u = u / (rad_max + epsilon)
@@ -138,6 +139,11 @@ def flow_to_image(flow_uv, clip_flow=None, convert_to_bgr=False):
 def save_flo(flow_uv, fname, clip_flow=None, convert_to_bgr=False, nan_mask=None): 
     flow_img = flow_to_image(flow_uv, clip_flow=clip_flow, convert_to_bgr=convert_to_bgr)
     # flow_img[nan_mask]=0
+    
+    zero_mask = flow_img>=255
+    flow_img[zero_mask]=0
+    
+    # print(zero_mask.sum())
 
     pil_img = Image.fromarray(flow_img)
     pil_img.save(fname)
