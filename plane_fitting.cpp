@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <eigen3/Eigen/Dense>
 #include <cmath>
-// #include "plane_fitting.hpp"
 #include "tegbp.hpp"
 
 #include <iostream>
@@ -24,11 +23,6 @@ V9D Bx = (V9D() << -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0).finished();
 V9D By = (V9D() << -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0).finished();
 V9D B1 = (V9D() << 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).finished();
 Matrix<double, 9, 3> base(N_PATCH, BASE);
-
-// #pragma omp declare simd
-// inline int32 sub2ind_(int32 x, int32 y, int32 H, int32 W){
-// 	return (x + W*y);
-// }
 
 M3D* get_baseinv(double *BtBinv_lut, int32 ind)
 {
