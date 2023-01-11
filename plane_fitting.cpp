@@ -18,11 +18,6 @@
 
 using namespace std;
 
-int32 dircPF[2][N_PATCH] = {-1, 0, +1, -1, 0, +1, -1, 0, +1, -1, -1, -1,  0, 0, 0, +1, +1, +1};
-V9D Bx = (V9D() << -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0).finished();
-V9D By = (V9D() << -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0).finished();
-V9D B1 = (V9D() << 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).finished();
-Matrix<double, 9, 3> base(N_PATCH, BASE);
 
 M3D* get_baseinv(double *BtBinv_lut, int32 ind)
 {
@@ -38,28 +33,31 @@ void set_vperp(double *flow_norm, int32 ind, V2D* data)
 }
 
 /* binary to index */
-void bit2ind(bool valid[N_PATCH], int32 *ind)
+int32 bit2ind(bool valid[N_PATCH])
 {
-	*ind = 0;
+	int32 ind = 0;
 	for(int32 dir=0; dir<N_PATCH; dir++){
 		if (valid[dir]){
-			*ind = *ind + (int32)pow(2, dir);
+			ind+=  (int32)pow(2, dir);
 		}
 	}
+	return ind;
 }
 
 /* temporal window for plane fitting */
-// #pragma omp declare simd
+#pragma omp declare simd
 bool isValidPF(int32 ind, int32 t, int32* sae)
 {
 	return ((t - sae[ind]) < WIN_T);
 }
 
 /* compute valid event in a patch */
-void precompute_idx_pf(mem_pool pool, XYTPI* xytpi, int32 xyis[][N_PATCH], bool valid[N_PATCH], int32 *n_valid){
+#pragma omp declare simd
+int32 precompute_idx_pf(mem_pool pool, XYTPI* xytpi, int32 xyis[][N_PATCH], bool valid[N_PATCH]){
 	// https://qiita.com/hareku/items/3d08511eab56a481c7db
-	*n_valid = 0;
-	int32 ind_pol;
+	int32 n_valid;
+	int32 dircPF[2][N_PATCH] = {-1, 0, +1, -1, 0, +1, -1, 0, +1, -1, -1, -1,  0, 0, 0, +1, +1, +1};
+
 	// #pragma simd
 	for(int32 dir=0; dir<N_PATCH; dir++){
 		xyis[0][dir] 	= (*xytpi).at(0) + dircPF[0][dir];
@@ -67,25 +65,27 @@ void precompute_idx_pf(mem_pool pool, XYTPI* xytpi, int32 xyis[][N_PATCH], bool 
 		xyis[2][dir] 	= sub2ind_(xyis[0][dir], xyis[1][dir], pool.H, pool.W);
 		// polarity
 		valid[dir] 		= isValidPF(2*xyis[2][dir]+(*xytpi).at(3), (*xytpi).at(2), pool.sae_pol);
-		if (valid[dir]){
-			*n_valid 	= *n_valid + 1;;
-		}
+		n_valid+= (int32)valid[dir];
 	}
+	return n_valid;
 }
 
 void plane_fitting(mem_pool pool,  XYTPI* xytpi) // plane fitting
 {
 	int32 xyi_pf[4][N_PATCH];
 	bool valid[N_PATCH];
-	int32 n_valid;
-	int32 ind_BtBinv;
+	// int32 ind_BtBinv;
+
+	V9D Bx = (V9D() << -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0).finished();
+	V9D By = (V9D() << -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0).finished();
+	V9D B1 = (V9D() << 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).finished();
 
 	/* iterativeにやるならvalidを変えながら繰り返し */
 	/* calculate valid event in a patch */
-	precompute_idx_pf(pool, xytpi, xyi_pf, valid, &n_valid);
+	int32 n_valid = precompute_idx_pf(pool, xytpi, xyi_pf, valid);
 	// printf("%d\n", n_valid);
 
-	bit2ind(valid, &ind_BtBinv);		// binary pattern to index
+	int32 ind_BtBinv = bit2ind(valid);		// binary pattern to index
 
 	#if DEBUG
 	for(int32 dir=0; dir<N_PATCH; dir++){
@@ -112,9 +112,10 @@ void plane_fitting(mem_pool pool,  XYTPI* xytpi) // plane fitting
 	for(int32 dir=0; dir<N_PATCH; dir++){
 		if (valid[dir]){
 			// 0, 1, -1だから掛け算要らないので書き直す
-			f0 += Bx(dir) * pool.sae[xyi_pf[2][dir]];
-			f1 += By(dir) * pool.sae[xyi_pf[2][dir]];
-			f2 += pool.sae_pol[2*xyi_pf[2][dir]+(*xytpi).at(3)];
+			int32 ind = 2*xyi_pf[2][dir]+(*xytpi).at(3);
+			f0 += Bx(dir) * pool.sae_pol[ind];
+			f1 += By(dir) * pool.sae_pol[ind];
+			f2 += pool.sae_pol[ind];
 		}
 	}
 
@@ -147,6 +148,13 @@ mem_pool initialize_nrml(data_cfg cfg)
 	pool.H = cfg.H;
 	pool.W = cfg.W;
 	pool.B = cfg.B;
+
+	Matrix<double, 9, 3> base(N_PATCH, BASE);
+
+
+	V9D Bx = (V9D() << -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0).finished();
+	V9D By = (V9D() << -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0).finished();
+	V9D B1 = (V9D() << 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).finished();
 
 	pool.BtBinv_lut = (double *) malloc((1<<N_PATCH)*sizeof(M3D)); // 2^9 x (3 x 3)
 	double cond = 0.00001;

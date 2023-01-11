@@ -7,7 +7,6 @@
 #include <random>
 #include <unistd.h>
 #include "tegbp.hpp"
-// #include "plane_fitting.hpp"
 #include "progressbar.hpp"
 #include <sstream>
 

@@ -47,6 +47,7 @@ struct mem_pool{
     double *flow_norm;  // for checking normal flow
     double *node;
     double *v_norms;
+    double *v_fulls;
     int32 *sae;
     int32 *sae_pol;
     int32 *indices;

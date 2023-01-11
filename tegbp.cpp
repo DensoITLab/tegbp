@@ -216,9 +216,10 @@ void send_message_Nconnect(mem_pool* pool,  XYTI* xyti)
     }
 }
 
-void message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかける？ k=1 hopだからいいか
+V2D message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかける？ k=1 hopだからいいか
 {
     V6D belief;
+	V2D v_full;
 	int32 xyi_n[4][N_EDGE];
 	bool act_n[N_EDGE];
 
@@ -237,8 +238,10 @@ void message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかけ
     }
 
 	// self node
-	update_state((*pool).node, act_n, (*xyti)[3]);
-	return;
+	belief = update_state((*pool).node, act_n, (*xyti)[3]);
+	v_full = belief.head(2);
+
+	return v_full;
 }
 
 
@@ -261,7 +264,9 @@ void process_batch_full(mem_pool pool, int32 b_ptr)
 		set_observation(&pool, &v_perp, xyti[3]);
 
 		// Core of message passing
-		message_passing_event(&pool, &xyti);
+		V2D v_full = message_passing_event(&pool, &xyti);
+		pool.v_fulls[2*i+0]=v_full[0];
+		pool.v_fulls[2*i+1]=v_full[1];
 	}
 return;
 }
@@ -307,6 +312,8 @@ mem_pool initialize_full(data_cfg cfg){
 	pool.sae  	    = (int32 *) malloc(1*pool.W*pool.H*sizeof(int32));
 	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int32));
 	pool.v_norms 	= (double *) malloc(2*pool.B*sizeof(double));
+	pool.v_fulls 	= (double *) malloc(2*pool.B*sizeof(double));
+	memset(pool.v_fulls, 0, 2*pool.B*sizeof(double));
 	pool.indices    = (int32 *) malloc(2*pool.B*sizeof(int32));
 	pool.timestamps = (int32 *) malloc(1*pool.B*sizeof(int32));
 	printf("initialize memory pool %d  %d  %d\n", pool.B, pool.H, pool.W);
