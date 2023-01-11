@@ -55,8 +55,8 @@ void load_txt(mem_pool pool){
         vector<string> strvec = split(line, ',');
 		pool.indices[2*n+0] = (int32)stoi(strvec.at(0)); // x
 		pool.indices[2*n+1] = (int32)stoi(strvec.at(1)); // y
-		pool.v_norms[2*n+0] = stod(strvec.at(4)); // vx_perp
-		pool.v_norms[2*n+1] = stod(strvec.at(5)); // vy_perp
+		pool.norms[2*n+0] = stod(strvec.at(4)); // vx_perp
+		pool.norms[2*n+1] = stod(strvec.at(5)); // vy_perp
 		pool.timestamps[n] 	= (int32)stoi(strvec.at(2)); // t
 		// printf("timestamps %d %d\n", n, pool.timestamps[n] );
 		n++;

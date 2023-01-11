@@ -251,7 +251,7 @@ void process_batch_full(mem_pool pool, int32 b_ptr)
 	#pragma omp for nowait schedule(dynamic)
 	// #pragma omp for simd nowait schedule(dynamic)
     for(int32 i=b_ptr; i<(b_ptr+pool.WINSIZE); i++){
-		V2D v_perp = (V2D() << pool.v_norms[2*i+0], pool.v_norms[2*i+1]).finished();
+		V2D v_perp = (V2D() << pool.norms[2*i+0], pool.norms[2*i+1]).finished();
 		int32 x = pool.indices[2*i+0]; int32 y = pool.indices[2*i+1]; 
         int32 t = pool.timestamps[i];
 		int32 ind = sub2ind_(x, y,  pool.H, pool.W);
@@ -265,8 +265,8 @@ void process_batch_full(mem_pool pool, int32 b_ptr)
 
 		// Core of message passing
 		V2D v_full = message_passing_event(&pool, &xyti);
-		pool.v_fulls[2*i+0]=v_full[0];
-		pool.v_fulls[2*i+1]=v_full[1];
+		pool.fulls[2*i+0]=v_full[0];
+		pool.fulls[2*i+1]=v_full[1];
 	}
 return;
 }
@@ -311,9 +311,9 @@ mem_pool initialize_full(data_cfg cfg){
 	memset(pool.node, 0.0, NOD_DIM*pool.W*pool.H*sizeof(double));
 	pool.sae  	    = (int32 *) malloc(1*pool.W*pool.H*sizeof(int32));
 	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int32));
-	pool.v_norms 	= (double *) malloc(2*pool.B*sizeof(double));
-	pool.v_fulls 	= (double *) malloc(2*pool.B*sizeof(double));
-	memset(pool.v_fulls, 0, 2*pool.B*sizeof(double));
+	pool.norms 	= (double *) malloc(2*pool.B*sizeof(double));
+	pool.fulls 	= (double *) malloc(2*pool.B*sizeof(double));
+	memset(pool.fulls, 0, 2*pool.B*sizeof(double));
 	pool.indices    = (int32 *) malloc(2*pool.B*sizeof(int32));
 	pool.timestamps = (int32 *) malloc(1*pool.B*sizeof(int32));
 	printf("initialize memory pool %d  %d  %d\n", pool.B, pool.H, pool.W);

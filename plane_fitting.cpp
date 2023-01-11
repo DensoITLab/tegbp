@@ -187,7 +187,7 @@ mem_pool initialize_nrml(data_cfg cfg)
 	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int32));
 	pool.sae_pol    = (int32 *) malloc(2*pool.W*pool.H*sizeof(int32));
 	memset(pool.sae_pol, -10*DT_ACT, 2*pool.W*pool.H*sizeof(int32));
-	pool.v_norms 	= (double *) malloc(2*pool.B*sizeof(double));
+	pool.norms 	= (double *) malloc(2*pool.B*sizeof(double));
 	pool.indices    = (int32 *) malloc(2*pool.B*sizeof(int32));
 	pool.timestamps = (int32 *) malloc(1*pool.B*sizeof(int32));
 	pool.polarities = (int32 *) malloc(1*pool.B*sizeof(int32));
