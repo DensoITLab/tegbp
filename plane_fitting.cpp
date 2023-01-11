@@ -9,7 +9,9 @@
 #include <unistd.h>
 #include <eigen3/Eigen/Dense>
 #include <cmath>
-#include "plane_fitting.hpp"
+// #include "plane_fitting.hpp"
+#include "tegbp.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -24,9 +26,9 @@ V9D B1 = (V9D() << 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).finished();
 Matrix<double, 9, 3> base(N_PATCH, BASE);
 
 // #pragma omp declare simd
-inline int32 sub2ind_(int32 x, int32 y, int32 H, int32 W){
-	return (x + W*y);
-}
+// inline int32 sub2ind_(int32 x, int32 y, int32 H, int32 W){
+// 	return (x + W*y);
+// }
 
 M3D* get_baseinv(double *BtBinv_lut, int32 ind)
 {
@@ -87,14 +89,17 @@ void plane_fitting(mem_pool pool,  XYTPI* xytpi) // plane fitting
 	/* iterativeにやるならvalidを変えながら繰り返し */
 	/* calculate valid event in a patch */
 	precompute_idx_pf(pool, xytpi, xyi_pf, valid, &n_valid);
+	// printf("%d\n", n_valid);
+
+	bit2ind(valid, &ind_BtBinv);		// binary pattern to index
+
+	#if DEBUG
 	for(int32 dir=0; dir<N_PATCH; dir++){
 		printf("%d", valid[dir]);
 	}
 	printf("\n"); 						// 000000000
-	// printf("%d\n", n_valid);
-
-	bit2ind(valid, &ind_BtBinv);		// binary pattern to index
 	printf("%d\n", ind_BtBinv); 		// 0~2^9
+	#endif
 
 	if (n_valid < N_TH_PF){				// require a sufficient number of valid events
 		return;
@@ -121,6 +126,8 @@ void plane_fitting(mem_pool pool,  XYTPI* xytpi) // plane fitting
 
 	V3D Btf 	= (V3D() << (double)f0, (double)f1, (double)f2).finished();
 	V3D abc 	= BtBinv * Btf; 				// r = (BtB)^-1 Btf
+
+	
 	// printf("%d, %d, %d\n", f0, f1, f2);
 	// printf("%f, %f, %f\n", abc(0), abc(1), abc(2));
 	// printf("============\n");
@@ -130,15 +137,23 @@ void plane_fitting(mem_pool pool,  XYTPI* xytpi) // plane fitting
 		return;
 	}
 	V2D v_perp 		= (V2D() << abc(0) / a2b2 * DT, abc(1) / a2b2 * DT).finished(); // pix/DT
+	#if DEBUG
 	printf("%d, %d, %d, %d, %d\n", (*xytpi).at(0), (*xytpi).at(1), (*xytpi).at(2), (*xytpi).at(3), (*xytpi).at(4));
 	printf("%f, %f\n", v_perp(0), v_perp(1));
+	#endif
 	set_vperp(pool.flow_norm, (*xytpi).at(4)*2, &v_perp);
 
 	return;
 }
 
-mem_pool initialize(mem_pool pool)
+mem_pool initialize_nrml(data_cfg cfg)
 {
+	mem_pool pool;
+	pool.data_name = cfg.data_name;
+	pool.H = cfg.H;
+	pool.W = cfg.W;
+	pool.B = cfg.B;
+
 	pool.BtBinv_lut = (double *) malloc((1<<N_PATCH)*sizeof(M3D)); // 2^9 x (3 x 3)
 	double cond = 0.00001;
 	M3D C = (M3D() << cond, 0.0, 0.0, 0.0, cond, 0.0, 0.0, 0.0, cond).finished();
@@ -178,112 +193,8 @@ mem_pool initialize(mem_pool pool)
   return pool;
 }
 
-vector<string> split(string& input, char delimiter)
-{
-    istringstream stream(input);
-    string field;
-    vector<string> result;
-    while (getline(stream, field, delimiter)) {
-        result.push_back(field);
-    }
-    return result;
-}
 
-void load_data_event(mem_pool pool, std::string data_name){
-	std::string data_path = "data/" + data_name + ".txt";
-	// printf("load_data_txt %s %d\n", data_path.c_str(), pool.B);
-	ifstream ifs(data_path);
-	string line;
-
-	getline(ifs, line);
-	// cout << line << '\n';
-
-	int32 n = 0;
-    while (getline(ifs, line) && n<pool.B) {
-        vector<string> strvec = split(line, ',');
-		pool.indices[2*n+0] = (int32)stoi(strvec.at(0)); // x
-		pool.indices[2*n+1] = (int32)stoi(strvec.at(1)); // y
-		pool.v_norms[2*n+0] = 0.0; // vx_perp
-		pool.v_norms[2*n+1] = 0.0; // vy_perp
-		pool.timestamps[n] 	= (int32)stoi(strvec.at(2)); // t
-		pool.polarities[n] 	= (int32)stoi(strvec.at(3)); // p
-		// printf("timestamps %d %d\n", n, pool.timestamps[n] );
-		n++;
-    }
-	// printf("done..\n");
-    return;
-}
-
-void save_data_pf(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
-	double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
-	memset(fimg, 0.0, 2*pool.W*pool.H*sizeof(double));
-
-	int32 time;
-	#pragma omp parallel for
-	for(int32 y=0; y<pool.H; y++){
-		for(int32 x=0;x<pool.W;x++){
-			time = pool.sae[(pool.W*y + x)];
-			if ((c_time-time)<DT_ACT){
-				int32 ind = sub2ind_(x, y, pool.H, pool.W);
-				fimg[2*ind] 	= pool.flow_norm[2*ind];
-				fimg[2*ind+1] 	= pool.flow_norm[2*ind+1];
-			}
-		}
-	}
-
-	stringstream filename;
-	filename << "result/" << pool.data_name << "/bin/flo_"  << index <<  "_" << std::setw(5) << std::setfill('0') << seq_id << ".bin";
-	std::ofstream myFile (filename.str(), std::ios::out | std::ios::binary);
-	myFile.write ((char *)fimg, 2*pool.W*pool.H*sizeof(double));
-	printf("Saving data %s, %d_%04d\n",filename.str().c_str(), index, seq_id);
-	// printf("comleted\n");
-}
-
-mem_pool load_data_pf(std::string data_name){
-	mem_pool pool;
-	printf("Loading %s\n", data_name.c_str());
-
-	if (data_name == "bricks"){
-		pool.W = 272;
-    	pool.H = 208;
-    	pool.B = 15000;
-	}
-	if (data_name == "bricks_1slide"){
-		pool.W = 272;
-    	pool.H = 208;
-    	pool.B = 15000;
-	}
-	if (data_name == "indoor_flying2"){
-		pool.W = 368;
-    	pool.H = 288;
-    	pool.B = 2921002;
-	}
-	if (data_name == "dummy"){
-		pool.W = 272;
-    	pool.H = 208;
-    	pool.B = 15000;
-	}
-	if (data_name == "qr000"){ // substr(0, 2) == "qr"
-		pool.W = 1312;
-    	pool.H = 752;
-    	pool.B = 1418870;
-	}
-	if (data_name == "qr001"){
-		pool.W = 1312;
-    	pool.H = 752;
-    	pool.B = 684966;
-	}
-	pool.data_name = data_name;
-	pool = initialize(pool);
-	// printf("initialize memory pool %d  %d  %d %d\n", pool.B, pool.H, pool.W, pool.timestamps);
-
-	load_data_event(pool, data_name);
-
-	printf("done..\n");
-	return pool;
-}
-
-void process_batch_pf(mem_pool pool, int32 b_ptr)
+void process_batch_nrml(mem_pool pool, int32 b_ptr)
 {
   for(int32 i=b_ptr; i<(b_ptr+pool.WINSIZE); i++){
 		int32 x = pool.indices[2*i+0];

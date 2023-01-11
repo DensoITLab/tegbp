@@ -36,6 +36,11 @@ make
 source /opt/intel/oneapi/setvars.sh
 ```
 
+## MakeFile options
+```
+-fexcess-precision=fast -ffast-math -mssse3 -mfpmath=sse
+```
+
 ## Run
 ```
 ./process #thread #events

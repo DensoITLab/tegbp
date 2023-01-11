@@ -24,7 +24,7 @@ int32 dirc_idx[N_EDGE];
 
 // self:0  obs:1  from up:2 from down:3  from left:4: from down:5
 #pragma omp declare simd
-inline int32 sub2ind_(int32 x, int32 y, int32 H, int32 W){
+int32 sub2ind_(int32 x, int32 y, int32 H, int32 W){
 	return (x + W*y);
 }
 
@@ -248,7 +248,7 @@ void message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかけ
 }
 
 
-void process_batch(mem_pool pool, int32 b_ptr)
+void process_batch_full(mem_pool pool, int32 b_ptr)
 {
 	// #pragma omp for nowait
 	#pragma omp for nowait schedule(dynamic)
@@ -273,7 +273,13 @@ return;
 }
 
 
-mem_pool initialize(mem_pool pool){
+mem_pool initialize_full(data_cfg cfg){
+	mem_pool pool;
+	pool.data_name = cfg.data_name;
+	pool.H = cfg.H;
+	pool.W = cfg.W;
+	pool.B = cfg.B;
+
 	// memset(dirc,0, 2*(N_EDGE));
 	// memset(dirc_idx,0, 1*(N_EDGE));
 	constexpr int32 base_dirc[2][8] 	= {0,  0, -1, +1, -1, +1, -1, +1, -1, +1,  0,  0, -1, +1, +1, -1};  
