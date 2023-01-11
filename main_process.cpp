@@ -33,6 +33,7 @@ int32 main(int32 argc, char **argv)
 		printf("Dataset: %s\n", data_name.c_str());
 	}
 
+
 	if (argc>3){
 		if (atoi(argv[3])>0){
 			WINSIZE = atoi(argv[3]);
@@ -40,10 +41,15 @@ int32 main(int32 argc, char **argv)
 	}
 
 	if (argc>4){
-		n_itr_save = atoi(argv[4]);
+		if (atoi(argv[4])>0){
+			n_itr_save = atoi(argv[4]);
+		}
 	}
 
-	printf("Start main dataset: %s WINSIZE %d num_thread %d\n", data_name.c_str(), WINSIZE, num_thread);
+	if (argc>5){
+		is_full = (bool)atoi(argv[5]);
+	}
+	printf("Start main dataset: %s WINSIZE %d num_thread %d  is_full %d \n", data_name.c_str(), WINSIZE, num_thread, is_full);
 	// Load data and Initialize Global varialble 	by Allocating memory
 	data_cfg cfg = load_cfg(data_name);
 	mem_pool pool;

@@ -33,6 +33,7 @@ void set_vperp(double *flow_norm, int32 ind, V2D* data)
 }
 
 /* binary to index */
+#pragma omp declare simd
 int32 bit2ind(bool valid[N_PATCH])
 {
 	int32 ind = 0;
@@ -184,13 +185,15 @@ mem_pool initialize_nrml(data_cfg cfg)
 
 	pool.flow_norm  = (double *) malloc(2*pool.W*pool.H*sizeof(double));
 	pool.sae  	    = (int32 *) malloc(1*pool.W*pool.H*sizeof(int32));
-	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int32));
 	pool.sae_pol    = (int32 *) malloc(2*pool.W*pool.H*sizeof(int32));
-	memset(pool.sae_pol, -10*DT_ACT, 2*pool.W*pool.H*sizeof(int32));
-	pool.norms 	= (double *) malloc(2*pool.B*sizeof(double));
+	pool.norms 		= (double *) malloc(2*pool.B*sizeof(double));
 	pool.indices    = (int32 *) malloc(2*pool.B*sizeof(int32));
 	pool.timestamps = (int32 *) malloc(1*pool.B*sizeof(int32));
 	pool.polarities = (int32 *) malloc(1*pool.B*sizeof(int32));
+	
+	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int32));
+	memset(pool.sae_pol, -10*DT_ACT, 2*pool.W*pool.H*sizeof(int32));
+
 	printf("initialize memory pool %d  %d  %d\n", pool.B, pool.H, pool.W);
   return pool;
 }

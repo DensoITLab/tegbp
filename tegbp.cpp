@@ -308,14 +308,16 @@ mem_pool initialize_full(data_cfg cfg){
 
     // mem_pool pool;
     pool.node 		= (double *) malloc(NOD_DIM*pool.W*pool.H*sizeof(double));
-	memset(pool.node, 0.0, NOD_DIM*pool.W*pool.H*sizeof(double));
 	pool.sae  	    = (int32 *) malloc(1*pool.W*pool.H*sizeof(int32));
-	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int32));
-	pool.norms 	= (double *) malloc(2*pool.B*sizeof(double));
-	pool.fulls 	= (double *) malloc(2*pool.B*sizeof(double));
-	memset(pool.fulls, 0, 2*pool.B*sizeof(double));
+	pool.norms 		= (double *) malloc(2*pool.B*sizeof(double));
+	pool.fulls 		= (double *) malloc(2*pool.B*sizeof(double));
 	pool.indices    = (int32 *) malloc(2*pool.B*sizeof(int32));
 	pool.timestamps = (int32 *) malloc(1*pool.B*sizeof(int32));
+	
+	memset(pool.node, 0.0, NOD_DIM*pool.W*pool.H*sizeof(double));
+	memset(pool.sae, -10*DT_ACT, 1*pool.W*pool.H*sizeof(int32));
+	memset(pool.fulls, 0, 2*pool.B*sizeof(double));
+
 	printf("initialize memory pool %d  %d  %d\n", pool.B, pool.H, pool.W);
     return pool;
 }
