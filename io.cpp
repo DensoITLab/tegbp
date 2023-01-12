@@ -57,8 +57,9 @@ void load_txt(mem_pool pool){
 		pool.indices[2*n+1] = (int32)stoi(strvec.at(1)); // y
 		pool.timestamps[n] 	= (int32)stoi(strvec.at(2)); // t
 		pool.polarities[n] 	= (int32)stoi(strvec.at(3)); // p
-		pool.v_norms[2*n+0] = stod(strvec.at(4)); // vx_perp
-		pool.v_norms[2*n+1] = stod(strvec.at(5)); // vy_perp
+		pool.norms[2*n+0] 	= stod(strvec.at(4)); // vx_perp
+		pool.norms[2*n+1] 	= stod(strvec.at(5)); // vy_perp
+		pool.timestamps[n] 	= (int32)stoi(strvec.at(2)); // t
 		// printf("timestamps %d %d\n", n, pool.timestamps[n] );
 		n++;
     }
@@ -132,6 +133,12 @@ void save_flow(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
 	double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
 	memset(fimg, 0.0, 2*pool.W*pool.H*sizeof(double));
 
+	// for(int32 y=0; y<pool.H; y++){
+	// 	for(int32 x=0;x<pool.W;x++){
+	// 		fimg[2*(pool.W*y + x)+0] 	= 0;
+	// 		fimg[2*(pool.W*y + x)+1] 	= 0;
+	// 	}
+	// }
 	int32 time;
 	#pragma omp parallel for
 	for(int32 y=0; y<pool.H; y++){
@@ -192,8 +199,8 @@ void save_img(mem_pool pool, int32 seq_id, int32 index, int32 c_idx){
 		int32 y 	= pool.indices[2*i+1]; 
         int32 t 	= pool.timestamps[i];	
         int32 p 	= pool.polarities[i];				
-		double vx 	= pool.v_fulls[2*i+0];
-		double vy 	= pool.v_fulls[2*i+1];
+		double vx 	= pool.fulls[2*i+0];
+		double vy 	= pool.fulls[2*i+1];
 		switch (index){
 			case 0:
 				fimg[pool.W*y + x] 		= p*2;

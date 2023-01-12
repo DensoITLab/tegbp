@@ -46,8 +46,8 @@ struct mem_pool{
     double *BtBinv_lut; // look up table for plane fitting
     double *flow_norm;  // for checking normal flow
     double *node;
-    double *v_norms;
-    double *v_fulls;
+    double *norms;
+    double *fulls;
     int32 *sae;
     int32 *sae_pol;
     int32 *indices;
