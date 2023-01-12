@@ -150,13 +150,12 @@ def save_flo(flow_uv, fname, clip_flow=None, convert_to_bgr=False, nan_mask=None
     pil_img = Image.fromarray(flow_img)
     pil_img.save(fname)
 
-def img012_to_image(img012, clip_flow=None, convert_to_bgr=False):
-    img012[img012==1] = 128
-    img012[img012==2] = 255
-    return img012.astype(np.uint8)
+def iwe_to_image(img, max_cum=3):
+    img = (img + max_cum) * 255 / max_cum / 2
+    return img.astype(np.uint8)
 
-def save_edge(img012, fname, clip_flow=None, convert_to_bgr=False, nan_mask=None): 
-    img_edge = img012_to_image(img012, clip_flow=clip_flow, convert_to_bgr=convert_to_bgr)
+def save_edge(img, fname, max_cum=3): 
+    img_edge = iwe_to_image(img)
     # flow_img[nan_mask]=0
     pil_img = Image.fromarray(img_edge)
     pil_img.save(fname)

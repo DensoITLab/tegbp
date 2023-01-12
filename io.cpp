@@ -177,7 +177,7 @@ void save_img(mem_pool pool, int32 seq_id, int32 index, int32 c_idx){
 	int32 *fimg	= (int32 *) malloc(pool.W*pool.H*sizeof(int32));
 	for(int32 y=0; y<pool.H; y++){
 		for(int32 x=0;x<pool.W;x++){
-			fimg[pool.W*y + x] 		= 1;
+			fimg[pool.W*y + x] 		= 0;
 		}
 	}
 	// memset(fimg, 1.0, pool.W*pool.H*sizeof(double));
@@ -203,7 +203,7 @@ void save_img(mem_pool pool, int32 seq_id, int32 index, int32 c_idx){
 		double vy 	= pool.fulls[2*i+1];
 		switch (index){
 			case 0:
-				fimg[pool.W*y + x] 		= p*2;
+				fimg[pool.W*y + x] 		+= p*2-1;
 				break;
 			case 1:
 				if ((vx==0.0) && (vy==0.0)) break;
@@ -217,7 +217,7 @@ void save_img(mem_pool pool, int32 seq_id, int32 index, int32 c_idx){
 				// printf("%.1f, %.1f, %d, %d, %f\n", vx, vy, t, c_time, scale);
 				// printf("%d, %d\n", (int32)x, (int32)y);
 				// printf("%d, %d\n", (int32)x_to, (int32)y_to);
-				fimg[pool.W*(int32)y_to + (int32)x_to] = p*2;
+				fimg[pool.W*(int32)y_to + (int32)x_to] += p*2-1;
 				break;
 			default:
 				break;

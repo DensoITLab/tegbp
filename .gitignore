@@ -2,6 +2,8 @@
 .vscode/
 data/*
 process
+process_gcc
+process_intel
 result/
 result_/
 __pycache__/
