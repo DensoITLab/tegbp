@@ -60,7 +60,7 @@ int32 main(int32 argc, char **argv)
 	// Run the main image processing function
 	double ellapse 		= 0;
 	int32 b_ptr 		= 0;
-	int32 n_itr 		= pool.B/WINSIZE; // shoud be B/WINSIZE
+	int32 n_itr 		= pool.B/WINSIZE-1; // shoud be B/WINSIZE
 	int32 increment 	= 1;
 	if (pool.WINSIZE>=pool.B){
 		// For benchmarking
@@ -91,7 +91,9 @@ int32 main(int32 argc, char **argv)
 			b_ptr 	= b_ptr + (WINSIZE*increment); 
 
 			if (n_itr_save>0 & itr%n_itr_save==0){
-				save_data(pool, itr, 0, e_time); // estimated flow
+				save_flow(pool, itr, 0, e_time);			// estimated flow
+				save_img(pool, itr, 0, b_ptr+WINSIZE); 		// image
+				save_img(pool, itr, 1, b_ptr+WINSIZE); 		// image
 			}
 		}
 	}else{
@@ -109,7 +111,7 @@ int32 main(int32 argc, char **argv)
 			b_ptr 	= b_ptr + (WINSIZE*increment); 
 
 			if (n_itr_save>0 & itr%n_itr_save==0){
-				save_data(pool, itr, -1, e_time); // estimated flow
+				save_flow(pool, itr, -1, e_time); // estimated flow
 			}
 		}
 	}

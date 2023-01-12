@@ -130,7 +130,7 @@ void set_observation(mem_pool* pool, V2D* v_perp, int32 ind_slf)
 
 V6D smoothness_factor(V6D* msg_v, V4D* state)
 {
-	constexpr double inv_sigma2_prior = 1.0 / 1.0;
+	constexpr double inv_sigma2_prior = 1.0 / 0.01;
 	M4D Lam = (M4D() << inv_sigma2_prior, 0.0, -inv_sigma2_prior, 0.0, 0.0, inv_sigma2_prior, 0.0, -inv_sigma2_prior, -inv_sigma2_prior, 0.0, inv_sigma2_prior, 0.0, 0.0, -inv_sigma2_prior, 0.0, inv_sigma2_prior).finished(); // [4 x 4]
     V4D eta = (V4D() << 0.0, 0.0, 0.0, 0.0).finished();
 	
@@ -219,7 +219,6 @@ void send_message_Nconnect(mem_pool* pool,  XYTI* xyti)
 V2D message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかける？ k=1 hopだからいいか
 {
     V6D belief;
-	V2D v_full;
 	int32 xyi_n[4][N_EDGE];
 	bool act_n[N_EDGE];
 
@@ -239,7 +238,8 @@ V2D message_passing_event(mem_pool* pool,  XYTI* xyti) // 多分再帰でかけ�
 
 	// self node
 	belief = update_state((*pool).node, act_n, (*xyti)[3]);
-	v_full = belief.head(2);
+	// get state of self node
+    V2D v_full = belief_vec_to_mu(belief);
 
 	return v_full;
 }
@@ -316,6 +316,7 @@ mem_pool initialize_full(data_cfg cfg){
 	memset(pool.v_fulls, 0, 2*pool.B*sizeof(double));
 	pool.indices    = (int32 *) malloc(2*pool.B*sizeof(int32));
 	pool.timestamps = (int32 *) malloc(1*pool.B*sizeof(int32));
+	pool.polarities = (int32 *) malloc(1*pool.B*sizeof(int32));
 	printf("initialize memory pool %d  %d  %d\n", pool.B, pool.H, pool.W);
     return pool;
 }

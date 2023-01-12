@@ -5,7 +5,7 @@
 
 
 import numpy as np
-import flow_vis
+import vis_utils
 import command 
 from IPython.display import Image, display
 

@@ -55,9 +55,10 @@ void load_txt(mem_pool pool){
         vector<string> strvec = split(line, ',');
 		pool.indices[2*n+0] = (int32)stoi(strvec.at(0)); // x
 		pool.indices[2*n+1] = (int32)stoi(strvec.at(1)); // y
+		pool.timestamps[n] 	= (int32)stoi(strvec.at(2)); // t
+		pool.polarities[n] 	= (int32)stoi(strvec.at(3)); // p
 		pool.v_norms[2*n+0] = stod(strvec.at(4)); // vx_perp
 		pool.v_norms[2*n+1] = stod(strvec.at(5)); // vy_perp
-		pool.timestamps[n] 	= (int32)stoi(strvec.at(2)); // t
 		// printf("timestamps %d %d\n", n, pool.timestamps[n] );
 		n++;
     }
@@ -127,13 +128,13 @@ void debug_output(mem_pool pool){
 	printf("done..\n");
 }
 
-void save_data(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
+void save_flow(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
 	double *fimg	= (double *) malloc(2*pool.W*pool.H*sizeof(double));
 	memset(fimg, 0.0, 2*pool.W*pool.H*sizeof(double));
 
 	int32 time;
 	#pragma omp parallel for
-	for(int32 y=0; y<pool.H; y++)
+	for(int32 y=0; y<pool.H; y++){
 		for(int32 x=0;x<pool.W;x++){
 			time = pool.sae[(pool.W*y + x)];
 			if ((c_time-time)<DT_ACT){
@@ -153,12 +154,73 @@ void save_data(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
 					break;
 				}
 			}
+		}
 	}
 
 	stringstream filename;
 	filename << "result/" << pool.data_name << "/bin/flo_"  << index <<  "_" << std::setw(5) << std::setfill('0') << seq_id << ".bin";
 	std::ofstream myFile (filename.str(), std::ios::out | std::ios::binary);
 	myFile.write ((char *)fimg, 2*pool.W*pool.H*sizeof(double));
+	printf("Saving data %s, %d_%04d\n",filename.str().c_str(), index, seq_id);
+	// printf("comleted\n");
+}
+
+
+void save_img(mem_pool pool, int32 seq_id, int32 index, int32 c_idx){
+	int32 *fimg	= (int32 *) malloc(pool.W*pool.H*sizeof(int32));
+	for(int32 y=0; y<pool.H; y++){
+		for(int32 x=0;x<pool.W;x++){
+			fimg[pool.W*y + x] 		= 1;
+		}
+	}
+	// memset(fimg, 1.0, pool.W*pool.H*sizeof(double));
+
+	int32 c_time 	= pool.timestamps[c_idx];
+	int32 idx 		= 0;
+	for(int32 i=c_idx; i>0; i--){
+		if (c_time - pool.timestamps[i] > DT_ACT){
+			idx = i+1;
+			break;
+		}
+	}
+	// printf("%d, %d\n", idx, c_idx);
+	double scale;
+	double x_to;
+	double y_to;
+	for(int32 i=idx; i<=c_idx; i++){
+		int32 x 	= pool.indices[2*i+0];
+		int32 y 	= pool.indices[2*i+1]; 
+        int32 t 	= pool.timestamps[i];	
+        int32 p 	= pool.polarities[i];				
+		double vx 	= pool.v_fulls[2*i+0];
+		double vy 	= pool.v_fulls[2*i+1];
+		switch (index){
+			case 0:
+				fimg[pool.W*y + x] 		= p*2;
+				break;
+			case 1:
+				if ((vx==0.0) && (vy==0.0)) break;
+				scale 	= (double)(c_time - t) / (double)DT;
+				x_to  	= (double)x + scale * vx;
+				y_to  	= (double)y + scale * vy;
+				if (x_to >= pool.W) x_to = pool.W-1;
+				if (y_to >= pool.H) y_to = pool.H-1;
+				if (x_to < 0) x_to = 0;
+				if (y_to < 0) y_to = 0;
+				// printf("%.1f, %.1f, %d, %d, %f\n", vx, vy, t, c_time, scale);
+				// printf("%d, %d\n", (int32)x, (int32)y);
+				// printf("%d, %d\n", (int32)x_to, (int32)y_to);
+				fimg[pool.W*(int32)y_to + (int32)x_to] = p*2;
+				break;
+			default:
+				break;
+		}
+	}
+
+	stringstream filename;
+	filename << "result/" << pool.data_name << "/bin/img_"  << index <<  "_" << std::setw(5) << std::setfill('0') << seq_id << ".bin";
+	std::ofstream myFile (filename.str(), std::ios::out | std::ios::binary);
+	myFile.write ((char *)fimg, pool.W*pool.H*sizeof(int32));
 	printf("Saving data %s, %d_%04d\n",filename.str().c_str(), index, seq_id);
 	// printf("comleted\n");
 }

@@ -71,7 +71,8 @@ struct data_cfg{
 data_cfg load_cfg(std::string data_name);
 mem_pool load_data(mem_pool pool);
 void debug_output(mem_pool pool);
-void save_data(mem_pool pool, int32 seq_id, int32 index, int32 c_time);
+void save_flow(mem_pool pool, int32 seq_id, int32 index, int32 c_time);
+void save_img(mem_pool pool, int32 seq_id, int32 index, int32 c_idx);
 void process_batch_full(mem_pool pool, int32 b_ptr);
 void process_batch_nrml(mem_pool pool, int32 b_ptr);
 mem_pool initialize_full(data_cfg cfg);
