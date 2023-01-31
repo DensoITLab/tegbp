@@ -11,13 +11,13 @@ using namespace Eigen;
 #define N_EDGE NEIGHBOR*N_SCALE
 #define STS_DIM 6
 #define NOD_DIM STS_DIM*(2+N_EDGE)
-#define DT_ACT 50000
 
 #define BASE 3
 #define WIN_X 3
 #define WIN_T 40000
 #define N_PATCH WIN_X*WIN_X
 #define DT_ACT 50000
+#define DT_VIS 50000
 #define DT 5000
 #define N_TH_PF 3
 

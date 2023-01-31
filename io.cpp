@@ -87,6 +87,11 @@ data_cfg load_cfg(std::string data_name){
     	cfg.H = 288;
     	cfg.B = 2921002;
 	}
+	if (data_name == "zurich_city_11_a"){
+		cfg.W = 672;
+    	cfg.H = 512;
+    	cfg.B = 10696000;
+	}
 	if (data_name == "dummy"){
 		cfg.W = 272;
     	cfg.H = 208;
@@ -144,7 +149,7 @@ void save_flow(mem_pool pool, int32 seq_id, int32 index, int32 c_time){
 	for(int32 y=0; y<pool.H; y++){
 		for(int32 x=0;x<pool.W;x++){
 			time = pool.sae[(pool.W*y + x)];
-			if ((c_time-time)<DT_ACT){
+			if ((c_time-time)<DT_VIS){
 				switch (index){
 				case 0:
 					fimg[2*(pool.W*y + x)] 		= pool.node[sub2ind_nod(x, y, pool.H, pool.W)+0];
@@ -185,7 +190,7 @@ void save_img(mem_pool pool, int32 seq_id, int32 index, int32 c_idx){
 	int32 c_time 	= pool.timestamps[c_idx];
 	int32 idx 		= 0;
 	for(int32 i=c_idx; i>0; i--){
-		if (c_time - pool.timestamps[i] > DT_ACT){
+		if (c_time - pool.timestamps[i] > DT_VIS){
 			idx = i+1;
 			break;
 		}
