@@ -102,6 +102,11 @@ data_cfg load_cfg(std::string data_name){
     	cfg.H = 752;
     	cfg.B = 684966;
 	}
+	if (data_name == "zurich_city_11_a"){
+		cfg.W = 672;
+    	cfg.H = 512;
+    	cfg.B = 10696000;
+	}
 	cfg.data_name = data_name;
 
 	return cfg;
