@@ -2,6 +2,7 @@
 Official repo for CVPR 2023 Paper "Tangentially Elongated Gaussian Belief Propagation for  Event-based Incremental Optical Flow Estimation"
 Jun, Nagata and Yusuke Sekikawa
 
+```
 @inproceedings{cvpr2023tegbp,
   author    = {Jun, Nagata, and Yusuke, Sekikawa},
   title     = {Tangentially Elongated Gaussian Belief Propagation for  Event-based Incremental Optical Flow Estimation},
@@ -9,6 +10,7 @@ booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Patte
   year      = {2023},
   url={https://openreview.net/attachment?id=FppNuRVrS8&name=camera-ready_PDF}
 }
+```
 
 
 
