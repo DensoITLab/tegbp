@@ -1,8 +1,16 @@
 # TEGBP
-Code for CVPR submmision 4712.
+Official repo for CVPR 2023 Paper "Tangentially Elongated Gaussian Belief Propagation for  Event-based Incremental Optical Flow Estimation"
+Jun, Nagata and Yusuke Sekikawa
 
-<!-- - [Overleaf](https://www.overleaf.com/project/634f900abe6816625b0e860e) -->
-<!-- - [PDF](https://github.com/DensoITLab/tegbp/blob/master/material/CVPR2023_4712.pdf) -->
+@inproceedings{cvpr2023tegbp,
+  author    = {Jun, Nagata, and Yusuke, Sekikawa},
+  title     = {Tangentially Elongated Gaussian Belief Propagation for  Event-based Incremental Optical Flow Estimation},
+booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2023},
+  url={https://openreview.net/attachment?id=FppNuRVrS8&name=camera-ready_PDF}
+}
+
+
 
 ![normal (input)](https://github.com/DensoITLab/tegbp/blob/master/material/flo_1_00009.png "normal (input)")
 ![full (output)](https://github.com/DensoITLab/tegbp/blob/master/material/flo_0_00009.png "full (output)")
