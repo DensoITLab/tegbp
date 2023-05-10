@@ -8,7 +8,7 @@ addpath matlab/outer/flow-code-matlab/
 
 %%
 flg_save    = false;
-flg_movie   = true;
+flg_movie   = false;
 framerate   = 30;
 batch       = 10^6;
 
@@ -23,9 +23,12 @@ t_th_inlier = -1;       % temporal threshold foutlier rejection in plane fitting
 th_inlier   = 0.5;      % threshold inlier ratio
 dt_scale    = 5000;     % dt scale
 
-data_dir    = '/home/jnagata/petaco/data/DNW/221108_EVK2_150mm_f8/500lux';
-data_name   = 'recording_2022-11-08_14-02-40';
-save_name   = 'qr001';
+% data_dir    = '/home/jnagata/petaco/data/DNW/221108_EVK2_150mm_f8/500lux';
+% data_name   = 'recording_2022-11-08_14-02-40';
+% save_name   = 'qr001';
+data_dir    = '/home/jnagata/petaco/data/PSEE/sample';
+data_name   = 'hand_spinner';
+save_name   = 'hand_spinner';
 
 %% load data
 event_path  = fullfile(data_dir, [data_name, '_cd.mat']);

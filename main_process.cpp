@@ -121,7 +121,7 @@ int32 main(int32 argc, char **argv)
 	}
 	double end = omp_get_wtime();
 	ellapse = ellapse + (end-start);
-	printf("\n%f [sec] for %d [K events] %5.2f [sec] (num_thread: %d) %5.3f KEPS\n",ellapse, pool.B/1000, (double)s_time/1000000.0,  num_thread, (pool.B/1000)/ellapse);
+	printf("\n%5.2f [sec] for %d [K events] %5.2f [sec] (num_thread: %d) %5.2f KEPS\n",ellapse, pool.B/1000, (double)s_time/1000000.0,  num_thread, (pool.B/1000)/ellapse);
 
 	// Visualize results
 	// debug_output(pool);

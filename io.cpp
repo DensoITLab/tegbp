@@ -112,6 +112,11 @@ data_cfg load_cfg(std::string data_name){
     	cfg.H = 512;
     	cfg.B = 10696000;
 	}
+	if (data_name == "hand_spinner"){
+		cfg.W = 688;
+    	cfg.H = 528;
+    	cfg.B = 434984;
+	}
 	cfg.data_name = data_name;
 
 	return cfg;
