@@ -9,10 +9,8 @@ clearvars
 addpath outer/prophesee-matlab-scripts/
 
 %%
-% rawdata_dir = fullfile('/home/jnagata/petaco/data', 'DNW/221108_EVK2_150mm_f8/500lux');
-% data_name   = 'recording_2022-11-08_14-02-40';
-rawdata_dir = fullfile('/home/jnagata/petaco/data', 'PSEE/sample');
-data_name   = 'hand_spinner';
+rawdata_dir = fullfile('/home/jnagata/petaco/data', 'DNW/221108_EVK2_150mm_f8/500lux');
+data_name   = 'recording_2022-11-08_14-02-40';
 
 rawdata_path = fullfile(rawdata_dir, [data_name, '.raw']);
 datdata_path = fullfile(rawdata_dir, [data_name, '_cd.dat']);
