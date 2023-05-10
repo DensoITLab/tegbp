@@ -85,7 +85,7 @@ int32 main(int32 argc, char **argv)
 			s_time = pool.timestamps[b_ptr];
 			e_time = pool.timestamps[b_ptr+WINSIZE];
 			// bar.update(format(" %dK - %dK  %5.2f - %5.2f",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0));
-			printf("%dK - %dK  %5.2f - %5.2f\n",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0);
+			// printf("%dK - %dK  %5.2f - %5.2f\n",b_ptr/1000, (b_ptr+WINSIZE)/1000, (double)s_time/1000000.0, (double)e_time/1000000.0);
 
 			#pragma omp parallel
 			{
@@ -121,7 +121,7 @@ int32 main(int32 argc, char **argv)
 	}
 	double end = omp_get_wtime();
 	ellapse = ellapse + (end-start);
-	printf("\n%f [sec] for %d [K events] %5.2f [sec] (num_thread: %d) %5.3f KEPS\n",ellapse, pool.B/1000, (double)s_time/1000000.0,  num_thread, (pool.B/1000)/ellapse);
+	printf("\n%5.3f [sec] for %d [K events] %5.3f [sec] (num_thread: %d) %5.3f KEPS\n",ellapse, pool.B/1000, (double)s_time/1000000.0,  num_thread, (pool.B/1000)/ellapse);
 
 	// Visualize results
 	// debug_output(pool);
